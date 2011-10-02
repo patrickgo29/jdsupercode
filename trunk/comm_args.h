@@ -9,6 +9,6 @@ typedef struct mat_mul_specs_struct{
 	int n;
 	int k;
 	int type;
-} mat_mul_specs;
+}mat_mul_specs;
 
 mat_mul_specs * getMatMulSpecs(int argc, char **argv);

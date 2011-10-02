@@ -24,38 +24,41 @@ LINK_MKL_GCC = -L/opt/intel/Compiler/11.1/059/mkl/lib/em64t/ \
 CC = mpicc
 CFLAGS = -O -Wall -Wextra -lm $(LINK_MKL_GCC) $(LINK_OPENMP_GCC)
 
-comm_args.o : comm_args.c comm_args.h
+matrix_utils.o : matrix_utils.c matrix_utils.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 local_mm.o : local_mm.c local_mm.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-matrix_utils.o : matrix_utils.c matrix_utils.h
+comm_args.o : comm_args.c comm_args.h
 	$(CC) $(CFLAGS) -o $@ -c $<
-
-unittest_mm : unittest_mm.c matrix_utils.o local_mm.o
-	$(CC) $(CFLAGS) -o $@ $^
-
-time_mm : time_mm.c matrix_utils.o local_mm.o comm_args.o
-	$(CC) $(CFLAGS) -o $@ $^
-
-time_mm.o : time_mm.c comm_args.o
-	$(CC) $(CFLAGS) -o $@ $<
-
-unittest_summa : matrix_utils.o local_mm.o summa.o unittest_summa.o
-	$(CC) $(CFLAGS) -o $@ $^
-
-time_summa : matrix_utils.o local_mm.o summa.o time_summa.o comm_args.o
-	$(CC) $(CFLAGS) -o $@ $^
 
 summa.o : summa.c summa.h local_mm.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-unittest_summa.o : unittest_summa.c
-	$(CC) $(CFLAGS) -o $@ -c $^
+unittest_mm.o : unittest_mm.c matrix_utils.h local_mm.h
+	$(CC) $(CFLAGS) -o $@ -c $<
 
-time_summa.o : time_summa.c comm_args.o
-	$(CC) $(CFLAGS) -o $@ -c $^
+unittest_mm : unittest_mm.o matrix_utils.o local_mm.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+time_mm.o : time_mm.c matrix_utils.h local_mm.h comm_args.h
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+time_mm : time_mm.o matrix_utils.o local_mm.o comm_args.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+unittest_summa.o : unittest_summa.c matrix_utils.h local_mm.h summa.h
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+unittest_summa : unittest_summa.o matrix_utils.o local_mm.o summa.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+time_summa.o : time_summa.c matrix_utils.h local_mm.h summa.h comm_args.h
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+time_summa : time_summa.o matrix_utils.o local_mm.o summa.o comm_args.o
+	$(CC) $(CFLAGS) -o $@ $^
 
 .PHONY : clean
 .PHONY : clean-pbs
@@ -66,9 +69,10 @@ clean : clean-pbs
 	rm -f turnin.tar.gz
 
 clean-pbs : 
-	@ [ -d archive ] || mkdir -p ./archive/
-	if [ -f Proj1.e* ]; then mv -f Proj1.e* ./archive/; fi;
-	if [ -f Proj1.o* ]; then mv -f Proj1.o* ./archive/; fi;
+	rm -f Proj1.*
+#	@ [ -d archive ] || mkdir -p ./archive/
+#	if [ -f Proj1.e* ]; then mv -f Proj1.e* ./archive/; fi;
+#	if [ -f Proj1.o* ]; then mv -f Proj1.o* ./archive/; fi;
 
 run--unittest_mm : unittest_mm clean-pbs
 	qsub unittest_mm.pbs

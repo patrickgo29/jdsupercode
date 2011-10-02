@@ -11,6 +11,8 @@
 #include <math.h>
 #include <mpi.h>
 
+#include "matrix_utils.h"
+
 /**
  * Matrix Utility Functions
  *  

@@ -54,6 +54,8 @@ void random_multiply(int m, int n, int k, int iterations, int type) {
 
 int main(int argc, char *argv[]) {
 
+  mat_mul_specs * mms = getMatMulSpecs(argc, argv);
+
   int rank = 0;
   int np = 0;
   char hostname[MPI_MAX_PROCESSOR_NAME + 1];

@@ -6,8 +6,9 @@ mat_mul_specs * getMatMulSpecs(int argc, char **argv){
         	{"openmp", 0, 0, 0},
         	{"mkl", 0, 0, 0},
         	{NULL, 0, NULL, 0}
-	}
-	mat_mul_specs * mms = (mat_mul_specs *)malloc(sizeof(mat_mul_specs));
+	};
+	mat_mul_specs * mms;
+	mms = (mat_mul_specs *)malloc(sizeof(mat_mul_specs));
 	mms->m = 0; mms->n = 0; mms->k = 0; mms->type = 0;
 	int c, option_index = 0, type_set = 0;
 	while ((c = getopt_long(argc, argv, ":m:n:k:", long_options, &option_index)) != -1) {
