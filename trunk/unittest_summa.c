@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include "matrix_utils.h"
+#include "comm_args.h"
 #include "local_mm.h"
 #include "summa.h"
 
@@ -81,7 +82,7 @@ bool random_matrix_test(int m, int n, int k, int px, int py, int panel_size, int
      * Solve the problem locally and store the
      *  solution in CC
      */
-    local_mm(m, n, k, 1.0, A, m, B, k, 0.0, CC, m, type);
+    local_mm_typed(m, n, k, 1.0, A, m, B, k, 0.0, CC, m, type);
   }
 
   /* 
@@ -131,7 +132,7 @@ bool random_matrix_test(int m, int n, int k, int px, int py, int panel_size, int
    *
    */
 
-  summa(m, n, k, A_block, B_block, C_block, px, py, 1, type);
+  summa_typed(m, n, k, A_block, B_block, C_block, px, py, 1, type);
 
 #ifdef DEBUG
   /* flush output and synchronize the processes */

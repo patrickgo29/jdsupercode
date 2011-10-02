@@ -69,13 +69,13 @@ void identity_test(int n, int type) {
   C = zeros_matrix(n, n);
 
   /* C = 1.0*(A*B) + 0.0*C */
-  local_mm(n, n, n, 1.0, A, n, B, n, 5.0, C, n, type);
+  local_mm_typed(n, n, n, 1.0, A, n, B, n, 5.0, C, n, type);
 
   /* Verfiy the results */
   verify_matrix(n, n, A, C);
 
   /* Backwards C = 1.0*(B*A) + 0.0*C */
-  local_mm(n, n, n, 1.0, B, n, A, n, 0.0, C, n, type);
+  local_mm_typed(n, n, n, 1.0, B, n, A, n, 0.0, C, n, type);
 
   /* Verfiy the results */
   verify_matrix(n, n, A, C);
@@ -105,13 +105,13 @@ void ones_test(int m, int n, int k, int type) {
   C_zeros = zeros_matrix(m, n);
 
   /* C = (1.0/k)*(A*B) + 0.0*C */
-  local_mm(m, n, k, (1.0 / k), A, m, B, k, 0.0, C, m, type);
+  local_mm_typed(m, n, k, (1.0 / k), A, m, B, k, 0.0, C, m, type);
 
   /* Verfiy the results */
   verify_matrix(m, n, C, C_ones);
 
   /* C = (1.0/k)*(A*B) + -1.0*C */
-  local_mm(m, n, k, (1.0 / k), A, m, B, k, -1.0, C, m, type);
+  local_mm_typed(m, n, k, (1.0 / k), A, m, B, k, -1.0, C, m, type);
 
   /* Verfiy the results */
   verify_matrix(m, n, C, C_zeros);
@@ -143,7 +143,7 @@ void lower_triangular_test(int n, int type) {
   C = ones_matrix(n, 1);
 
   /* C = 1.0*(A*B) + 0.0*C */
-  local_mm(n, 1, n, 1.0, A, n, B, n, 0.0, C, n, type);
+  local_mm_typed(n, 1, n, 1.0, A, n, B, n, 0.0, C, n, type);
 
   /* Loops over every element in C */
   for (i = 0; i < n; i++) {
@@ -152,7 +152,7 @@ void lower_triangular_test(int n, int type) {
   }
 
   /* C = 0.0*(A*B) + 1.0*C */
-  local_mm(n, 1, n, 0.0, A, n, B, n, 1.0, C, n, type);
+  local_mm_typed(n, 1, n, 0.0, A, n, B, n, 1.0, C, n, type);
 
   /* Loops over every element in C */
   for (i = 0; i < n; i++) {
@@ -161,7 +161,7 @@ void lower_triangular_test(int n, int type) {
   }
 
   /* C = 1.0*(A*B) + 1.0*C */
-  local_mm(n, 1, n, 3.0, A, n, B, n, 1.0, C, n, type);
+  local_mm_typed(n, 1, n, 3.0, A, n, B, n, 1.0, C, n, type);
 
   /* Loops over every element in C */
   for (i = 0; i < n; i++) {
@@ -170,7 +170,7 @@ void lower_triangular_test(int n, int type) {
   }
 
   /* C = 0.0*(A*B) + 0.0*C */
-  local_mm(n, 1, n, 0.0, A, n, B, n, 0.0, C, n, type);
+  local_mm_typed(n, 1, n, 0.0, A, n, B, n, 0.0, C, n, type);
 
   /* Loops over every element in C */
   for (i = 0; i < n; i++) {

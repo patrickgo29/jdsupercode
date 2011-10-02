@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <mkl.h>
+#include <omp.h>
 
 #include "local_mm.h"
 
@@ -37,9 +38,36 @@
  *
  **/
 
-void local_mm(const int m, const int n, const int k, const double alpha,
-    const double *A, const int lda, const double *B, const int ldb,
-    const double beta, double *C, const int ldc, int type) {
+void local_mm(const int m, const int n, const int k,
+	      const double alpha,
+	      const double *A, const int lda, 
+	      const double *B, const int ldb,
+	      const double beta, 
+	      double *C, const int ldc){
+
+	local_mm_typed(m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, NAIVE);
+
+}
+
+void local_mms(mat_mul_specs * mms, 
+		const double alpha, 
+		const double *A, const int lda,
+		const double *B, const int ldb,
+		const double beta, 
+		const double *C, const int ldc){
+
+	omp_set_num_threads(mms->threads);
+	local_mm_typed(mms->m, mms->n, mms->k, alpha, A, lda, B, ldb, beta, C, ldc, mms->type);
+
+}
+
+void local_mm_typed(const int m, const int n, const int k, 
+		    const double alpha,
+		    const double *A, const int lda, 
+		    const double *B, const int ldb,
+		    const double beta, 
+		    double *C, const int ldc, 
+		    int type) {
 
   /* Verify the sizes of lda, ladb, and ldc */
   assert(lda >= m);
