@@ -28,5 +28,15 @@
  *
  *  panel_size is the Panel Block Size
  **/
-void summa(int m, int n, int k, double *Ablock, double *Bblock, double *Cblock,
-    int procGridX, int procGridY, int panel_size, int type);
+
+void summa(int m, int n, int k,
+	   double *Ablock, double *Bblock, double *Cblock,
+    	   int procGridX, int procGridY, int panel_size);
+
+void summa_mms(mat_mul_specs * mms,
+	       double *Ablock, double *Bblock, double *Cblock);
+
+void summa_typed(int m, int n, int k, 
+		 double *Ablock, double *Bblock, double *Cblock,
+    		 int procGridX, int procGridY, int panel_size, 
+		 int type);

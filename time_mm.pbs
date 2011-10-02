@@ -1,10 +1,12 @@
 #PBS -q class
 #PBS -l nodes=1:sixcore
-#PBS -l walltime=00:03:00
+#PBS -l walltime=01:00:00
 #PBS -N Proj1
 
 export OMPI_MCA_mpi_yield_when_idle=0
 cd $PBS_O_WORKDIR
+
+RESULTS=../Results
 
 date
 hostname
@@ -12,6 +14,21 @@ echo $PWD
 cat $PBS_NODEFILE
 echo -e "\n\n"
 
-mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 --naive -t 20
+echo "testing naive"
+mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 -trials 25 --naive
 
+for SIZE in 256 512 1024 2048 4096 8192 16384 32768
+do
+	rm -f $RESULTS/local_mm_single_node_openmp_strong_scaling.csv
+	for THREADS in {1..24}
+	do
+		mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 -trials 25 --openmp $THREADS >> $RESULTS/local_mm_single_node_openmp_strong_scaling.csv
+	done
+	
+	rm -f $RESULTS/local_mm_single_node_mkl_strong_scaling.csv
+	for THREADS in {1..24}
+	do
+		mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 -trials 25 --mkl $THREADS >> $RESULTS/local_mm_single_node_mkl_strong_scaling.csv
+	done
+done
 # eof

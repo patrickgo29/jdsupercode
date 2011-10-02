@@ -1,8 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <getopt.h>
-
-#include "local_mm.h"
+#ifndef __COMM_ARGS_H__
+#define __COMM_ARGS_H__
 
 typedef struct mat_mul_specs_struct{
 	int m;
@@ -11,8 +8,11 @@ typedef struct mat_mul_specs_struct{
 	int x;
 	int y;
 	int b;
-	int t;
 	int type;
+	int threads;
+	int trials;
 }mat_mul_specs;
 
 mat_mul_specs * getMatMulSpecs(int argc, char **argv);
+
+#endif

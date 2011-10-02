@@ -18,13 +18,17 @@
 /**
  * Test the multiplication of two matrices of all ones
  **/
-void random_multiply(int m, int n, int k, int iterations, int type) {
+void random_multiply(mat_mul_specs * mms) {
+  int m, n, k, iterations;
+  m = mms->m;
+  n = mms->n;
+  k = mms->k;
+  iterations = mms->trials;
   int iter;
   double *A, *B, *C;
   double t_start, t_elapsed;
 
-  printf("Timing Matrix Multiply m=%d n=%d k=%d iterations=%d....", m, n, k,
-      iterations);
+  //printf("Timing Matrix Multiply m=%d n=%d k=%d iterations=%d....", m, n, k, iterations);
 
   /* Allocate matrices */
   A = random_matrix(m, k);
@@ -36,7 +40,7 @@ void random_multiply(int m, int n, int k, int iterations, int type) {
   /* perform several Matric Mulitplies back-to-back */
   for (iter = 0; iter < iterations; iter++) {
     /* C = (1.0/k)*(A*B) + 0.0*C */
-    local_mm(m, n, k, 1.0, A, m, B, k, 1.0, C, m, type);
+    local_mms(mms, 1.0, A, mms->m, B, mms->k, 1.0, C, mms->m);
   } /* iter */
 
   t_elapsed = MPI_Wtime() - t_start; /* Stop timer */
@@ -46,8 +50,14 @@ void random_multiply(int m, int n, int k, int iterations, int type) {
   deallocate_matrix(B);
   deallocate_matrix(C);
 
-  printf("total_time=%lf, per_iteration=%lf\n", t_elapsed, t_elapsed
-      / iterations);
+  printf("%d, %d, %d, %lf, %d, %lf, ", mms->m, mms->n, mms->k, t_elapsed, mms->trials, t_elapsed / mms->trials);
+  if(mms->type == 0)
+    printf("naive, ");
+  if(mms->type == 1)
+    printf("openmp, ");
+  if(mms->type == 2)
+    printf("mkl, ");
+  printf("%d\n", mms->threads);
 }
 
 int main(int argc, char *argv[]) {
@@ -63,15 +73,12 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank); /* Get process id */
   MPI_Comm_size(MPI_COMM_WORLD, &np); /* Get number of processes */
   MPI_Get_processor_name(hostname, &namelen); /* Get hostname of node */
-  printf("[Using Host:%s -- Rank %d out of %d]\n", hostname, rank, np);
-
-  
+  //printf("[Using Host:%s -- Rank %d out of %d]\n", hostname, rank, np);
 
   if (rank == 0) {
-    random_multiply(mms->m, mms->n, mms->k, mms->t, mms->type);
+    random_multiply(mms);
   }
 
   MPI_Finalize();
   return 0;
 }
-

@@ -11,7 +11,10 @@
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
+#include <omp.h>
+#include <mkl.h>
 
+#include "comm_args.h"
 #include "local_mm.h"
 
 /**
@@ -40,6 +43,22 @@
  **/
 
 void summa(int m, int n, int k,
+           double *Ablock, double *Bblock, double *Cblock,
+           int procGridX, int procGridY, int panel_size){
+	
+	summa_typed(m, n, k, Ablock, Bblock, Cblock,
+                 procGridX, procGridY, panel_size, NAIVE);
+}
+
+void summa_mms(mat_mul_specs * mms,
+               double *Ablock, double *Bblock, double *Cblock){
+	if(mms->type == OPENMP || mms->type == MKL)	
+		omp_set_num_threads(mms->threads);
+	summa_typed(mms->m, mms->n, mms->k, Ablock, Bblock, Cblock,
+		    mms->x, mms->y, mms->b, mms->type);
+}
+
+void summa_typed(int m, int n, int k,
 	double *Ablock, double *Bblock, double *Cblock,
 	int procGridX, int procGridY, int panel_size, int type) {
 //////////////////////////////////////////////////////////////////////////////
@@ -173,7 +192,7 @@ void summa(int m, int n, int k,
             t1_local_mm = MPI_Wtime();
         }
 #endif
-        local_mm(height_Cblock, width_Cblock, panel_size, 1.0,
+        local_mm_typed(height_Cblock, width_Cblock, panel_size, 1.0,
                 	panel_buf_A, height_pbA, panel_buf_B, height_pbB,
                 	1.0, Cblock, height_Cblock, type);
 
@@ -341,7 +360,7 @@ void summa(int m, int n, int k,
             t1_local_mm = MPI_Wtime();
         }
 #endif
-        local_mm(height_Cblock, width_Cblock, panel_size, 1.0,
+        local_mm_typed(height_Cblock, width_Cblock, panel_size, 1.0,
                 	panel_buf_A, height_pbA, panel_buf_B, height_pbB,
                 	1.0, Cblock, height_Cblock, type);
 #ifdef TIMING_MULT
