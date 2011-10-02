@@ -52,41 +52,12 @@ int timeval_subtract (result, x, y)
    return x->tv_sec < y->tv_sec;
 }
 
-/* Similar to verify_matrix(),
- *  this function verifies that each element of A
- *  matches the corresponding element of B
- *
- *  returns true if A and B are equal
- */
-bool verify_matrix_bool(int m, int n, double *A, double *B) {
-
-  /* Loop over every element of A and B */
-  int row, col;
-  for (col = 0; col < n; col++) {
-    for (row = 0; row < m; row++) {
-      int index = (col * m) + row;
-      double a = A[index];
-      double b = B[index];
-
-      if (a < b - EPS) {
-        return false;
-      }
-      if (a > b + EPS) {
-        return false;
-      }
-    } /* row */
-  }/* col */
-
-  return true;
-}
-
-
 /**
  * Creates random A, B, and C matrices and uses summa() to
  *  calculate the product. Returns time taken to compute
  *  summa
  **/
-void random_matrix_test(int m, int n, int k, int px, int py, int panel_size) {
+void random_matrix_test(int m, int n, int k, int px, int py, int panel_size, int type) {
 
   int num_procs = px * py;
   int rank = 0;
@@ -146,7 +117,7 @@ void random_matrix_test(int m, int n, int k, int px, int py, int panel_size) {
    *
    */
   gettimeofday(&tvbegin, NULL);
-  summa(m, n, k, A_block, B_block, C_block, px, py, panel_size);
+  summa(m, n, k, A_block, B_block, C_block, px, py, panel_size, type);
   gettimeofday(&tvend, NULL);
 
   fflush(stdout);
@@ -166,8 +137,9 @@ void random_matrix_test(int m, int n, int k, int px, int py, int panel_size) {
   MPI_Reduce(&procTime, &totalTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
   MPI_Bcast(&totalTime, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
+  /* print output when ready */
   if (rank == 0) {
-    printf("(%i %i %i %i %i %i) total time: %lf usecs,\n",m,n,k,px,py,panel_size,totalTime);
+    printf("%i,%i,%i,%i,%i,%i,%i,%lf\n",type,m,n,k,px,py,panel_size,totalTime);
   }
 }
 
@@ -203,11 +175,14 @@ int main(int argc, char *argv[]) {
   for (ix=0; ix<4; ix++) { // loop over processor grides
       for (jx=0; jx<4; jx++) { // loop over dimensions
           for (kx=0; kx<4; kx++) { // loop over panelsizes
+               for (lx=0; lx<3; lx++) {  // loop over local_mm types
 
-            //printf("%ix%i, %ix%ix%i, pb=%i\n",mdim[jx],
-            //        ndim[jx],kdim[jx],procs1[ix],procs2[ix],panelsizes[kx]);
-            random_matrix_test(mdim[jx],
-                    ndim[jx],kdim[jx],procs1[ix],procs2[ix],panelsizes[kx]);
+                   //printf("%ix%i, %ix%ix%i, pb=%i\n",mdim[jx],
+                   //        ndim[jx],kdim[jx],procs1[ix],procs2[ix],panelsizes[kx]);
+                   random_matrix_test(mdim[jx],ndim[jx],kdim[jx],
+                                      procs1[ix],procs2[ix],
+                                      panelsizes[kx],lx);
+	       }
           }
       }
   }
