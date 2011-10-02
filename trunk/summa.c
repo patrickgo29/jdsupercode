@@ -49,11 +49,16 @@ void summa(int m, int n, int k,
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
     //Setup time variables
     //One when broadcasting A, broadcasting B, and the local_mm
+#ifdef TIMING_MULT
+    double t1_local_mm=0; double t2_local_mm=0;
+    double ttime_local_mm=0;
+#endif
+#ifdef TIMING_BCAST
     double t1_bcast_A=0; double t2_bcast_A=0;
     double t1_bcast_B=0; double t2_bcast_B=0;
-    double t1_local_mm=0; double t2_local_mm=0;
+    double ttime_bcast_A=0; double ttime_bcast_B=0; 
     double temp_bcast_A=0; double temp_bcast_B=0;
-    double ttime_bcast_A=0; double ttime_bcast_B=0; double ttime_local_mm=0;
+#endif
 //////////////////////////////////////////////////////////////////////////////
 	//Determine x and y positions in 2-D array of processes
 	int x_proc = rank % procGridX;
@@ -82,17 +87,13 @@ void summa(int m, int n, int k,
 	int width_Ablock = k / procGridY;
 	int size_Ablock = height_Ablock * width_Ablock;
 	int y_Ablock_first = width_Ablock * y_proc;
-	int y_Ablock_last = y_Ablock_first + width_Ablock - 1;
 	//Bblock
 	int height_Bblock = k / procGridX;
 	int width_Bblock = n / procGridY;
-	int size_Bblock = height_Bblock * width_Bblock;
 	int x_Bblock_first = height_Bblock * x_proc;
-	int x_Bblock_last = x_Bblock_first + height_Bblock - 1;
 	//Cblock
 	int height_Cblock = m / procGridX;
 	int width_Cblock = n / procGridY;
-	int size_Cblock = height_Cblock * width_Cblock;
 ///////////////////////////////////////////////////////////////////////////////
 	//Calculate and allocate for the panel buffers
 	//Panel buffer A

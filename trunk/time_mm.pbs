@@ -12,22 +12,6 @@ echo $PWD
 cat $PBS_NODEFILE
 echo -e "\n\n"
 
-# Run the naive, OpenMP, and BLAS implementations of local_mm() with OMP_NUM_THREADS=1 to 24. Do this for the following matrix dimensions, i.e. (m,n,k)=
-#
-# Size (same shape, different number of elements):
-# (10,10,10)
-# (100,100,100)
-# (1000,1000,1000)
-# (10000,10000,10000)
-#
-# Shape (same number of elements, different shape):
-# (100,1,10)
-# (1000,10,100)
-# (10000,100,1000)
-# (100000,1000,10000)
-
-
-
-mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 --naive
+mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 --naive -t 20
 
 # eof

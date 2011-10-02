@@ -12,10 +12,9 @@ echo $PWD
 cat $PBS_NODEFILE
 echo -e "\n\n"
 
-export OMP_NUM_THREADS=6
+export OMP_NUM_THREADS=1
 export OMP_SCHEDULE="dynamic,1"
 
-# run with 1 process per node, but 8 threads per process
-mpirun --hostfile $PBS_NODEFILE -np 64 ./time_summa -m 256 -n 256 -k 256 -x 8 -y 8 -b 1 --openmp
+mpirun --hostfile $PBS_NODEFILE -np 64 ./time_summa -m 256 -n 256 -k 256 -x 8 -y 8 -b 1 -t 25 --openmp
 
 # eof

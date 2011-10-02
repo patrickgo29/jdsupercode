@@ -69,10 +69,9 @@ clean : clean-pbs
 	rm -f turnin.tar.gz
 
 clean-pbs : 
-	rm -f Proj1.*
-#	@ [ -d archive ] || mkdir -p ./archive/
-#	if [ -f Proj1.e* ]; then mv -f Proj1.e* ./archive/; fi;
-#	if [ -f Proj1.o* ]; then mv -f Proj1.o* ./archive/; fi;
+	@ [ -d archive ] || mkdir -p ./archive/
+	if [ -f Proj1.e* ]; then mv -f Proj1.e* ./archive/; fi;
+	if [ -f Proj1.o* ]; then mv -f Proj1.o* ./archive/; fi;
 
 run--unittest_mm : unittest_mm clean-pbs
 	qsub unittest_mm.pbs

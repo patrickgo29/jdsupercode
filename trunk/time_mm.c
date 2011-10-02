@@ -15,8 +15,6 @@
 #include "local_mm.h"
 #include "comm_args.h"
 
-#define NUM_TRIALS 25 /*!< Number of timing trials */
-
 /**
  * Test the multiplication of two matrices of all ones
  **/
@@ -70,7 +68,7 @@ int main(int argc, char *argv[]) {
   
 
   if (rank == 0) {
-    random_multiply(mms->m, mms->n, mms->k, NUM_TRIALS, mms->type);
+    random_multiply(mms->m, mms->n, mms->k, mms->t, mms->type);
   }
 
   MPI_Finalize();
