@@ -12,6 +12,7 @@
 #include "matrix_utils.h"
 #include "local_mm.h"
 #include "summa.h"
+#include "comm_args.h"
 
 #define NUM_TRIALS 25 /*!< Number of timing trials */
 
