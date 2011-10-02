@@ -1,0 +1,28 @@
+[jinx1:16002] *** An error occurred in MPI_Bcast
+[jinx1:16002] *** on communicator MPI COMMUNICATOR 3 CREATE FROM 0
+[jinx1:16002] *** MPI_ERR_COUNT: invalid count argument
+[jinx1:16002] *** MPI_ERRORS_ARE_FATAL (your MPI job will now abort)
+[jinx1:16000] *** Process received signal ***
+[jinx1:16000] Signal: Segmentation fault (11)
+[jinx1:16000] Signal code: Address not mapped (1)
+[jinx1:16000] Failing at address: 0x27eb000
+[jinx2:12062] *** Process received signal ***
+[jinx2:12062] Signal: Segmentation fault (11)
+[jinx2:12062] Signal code: Address not mapped (1)
+[jinx2:12062] Failing at address: 0x16bc000
+[jinx4:25775] *** Process received signal ***
+[jinx4:25775] Signal: Segmentation fault (11)
+[jinx4:25775] Signal code: Address not mapped (1)
+[jinx4:25775] Failing at address: 0xc29000
+[jinx3:17190] *** Process received signal ***
+[jinx3:17190] Signal: Segmentation fault (11)
+[jinx3:17190] Signal code: Address not mapped (1)
+[jinx3:17190] Failing at address: 0xfca000
+--------------------------------------------------------------------------
+mpirun has exited due to process rank 11 with PID 25776 on
+node jinx4 exiting without calling "finalize". This may
+have caused other processes in the application to be
+terminated by signals sent by mpirun (as reported here).
+--------------------------------------------------------------------------
+[jinx1:15989] 11 more processes have sent help message help-mpi-errors.txt / mpi_errors_are_fatal
+[jinx1:15989] Set MCA parameter "orte_base_help_aggregate" to 0 to see all help / error messages
