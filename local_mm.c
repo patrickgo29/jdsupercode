@@ -50,7 +50,6 @@ void local_mm(const int m, const int n, const int k, const double alpha,
   {
   int row, col;
   //Naive implementation
-  printf("Naive implementation!!!\n");
     /* Iterate over the columns of C */
     for (col = 0; col < n; col++) {
 
@@ -74,7 +73,6 @@ void local_mm(const int m, const int n, const int k, const double alpha,
     } /* col */
   }else if (type == OPENMP){
   //OpenMP implementation
-  printf("OpenMP implementation!!!\n");
     /* Iterate over the columns of C */
     int col;
     #pragma omp parallel for
@@ -100,7 +98,6 @@ void local_mm(const int m, const int n, const int k, const double alpha,
     } /* col */
   }else if (type == MKL){
   //MKL implementation
-  printf("MKL implemntation!!!\n");
     char normal = 'N';
     dgemm(&normal, &normal, &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc);
   }else{

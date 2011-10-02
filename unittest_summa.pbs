@@ -1,5 +1,5 @@
 #PBS -q class
-#PBS -l nodes=4
+#PBS -l nodes=4:sixcore
 #PBS -l walltime=00:02:00
 #PBS -N Proj1
 

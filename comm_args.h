@@ -8,6 +8,9 @@ typedef struct mat_mul_specs_struct{
 	int m;
 	int n;
 	int k;
+	int x;
+	int y;
+	int b;
 	int type;
 }mat_mul_specs;
 

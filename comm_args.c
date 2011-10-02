@@ -11,7 +11,7 @@ mat_mul_specs * getMatMulSpecs(int argc, char **argv){
 	mms = (mat_mul_specs *)malloc(sizeof(mat_mul_specs));
 	mms->m = 0; mms->n = 0; mms->k = 0; mms->type = 0;
 	int c, option_index = 0, type_set = 0;
-	while ((c = getopt_long(argc, argv, ":m:n:k:", long_options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, ":m:n:k:x:y:b:", long_options, &option_index)) != -1) {
 		switch (c) {
 			case 0:
 				if(option_index >= 0 && option_index <= 2){
@@ -27,6 +27,15 @@ mat_mul_specs * getMatMulSpecs(int argc, char **argv){
 				break;
 			case 'k':
 				mms->k = atoi(optarg);
+				break;
+			case 'x':
+				mms->x = atoi(optarg);
+				break;
+			case 'y':
+				mms->y = atoi(optarg);
+				break;
+			case 'b':
+				mms->b = atoi(optarg);
 				break;
 			case ':':
 				printf("argument %c requires a parameter\n", optopt);

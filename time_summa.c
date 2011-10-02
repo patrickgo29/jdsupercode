@@ -16,7 +16,7 @@
 
 #define NUM_TRIALS 25 /*!< Number of timing trials */
 
-void random_summa(int m, int n, int k, int px, int py, int pb, int iterations) {
+void random_summa(int m, int n, int k, int px, int py, int pb, int iterations, int type) {
   int iter;
   double t_start, t_elapsed;
   int rank = 0;
@@ -51,7 +51,7 @@ void random_summa(int m, int n, int k, int px, int py, int pb, int iterations) {
 
   t_start = MPI_Wtime(); /* Start timer */
   for (iter = 0; iter < iterations; iter++) {
-    summa(m, n, k, A_block, B_block, C_block, px, py, pb);
+    summa(m, n, k, A_block, B_block, C_block, px, py, pb, type);
   } /* iter */
 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -69,6 +69,9 @@ void random_summa(int m, int n, int k, int px, int py, int pb, int iterations) {
 
 /** Program start */
 int main(int argc, char *argv[]) {
+
+  mat_mul_specs * mms = getMatMulSpecs(argc, argv);
+
   int rank = 0;
   int np = 0;
   char hostname[MPI_MAX_PROCESSOR_NAME + 1];
@@ -80,13 +83,7 @@ int main(int argc, char *argv[]) {
   MPI_Get_processor_name(hostname, &namelen); /* Get hostname of node */
   printf("Using Host:%s -- Rank %d out of %d\n", hostname, rank, np);
 
-  /* These tests use 16 processes */
-  if (np != 64) {
-  	printf("Error: np=%d. Please use 64 processes\n",np);
-  }
-
-  random_summa(256, 256, 256, 8, 8, 1, NUM_TRIALS);
-
+  random_summa(mms->m, mms->n, mms->k, mms->x, mms->y, mms->b, NUM_TRIALS, mms->type);
 
   MPI_Finalize();
   return 0;
