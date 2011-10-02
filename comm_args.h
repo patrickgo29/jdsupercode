@@ -11,6 +11,7 @@ typedef struct mat_mul_specs_struct{
 	int x;
 	int y;
 	int b;
+	int t;
 	int type;
 }mat_mul_specs;
 

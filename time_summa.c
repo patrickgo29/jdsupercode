@@ -14,8 +14,6 @@
 #include "summa.h"
 #include "comm_args.h"
 
-#define NUM_TRIALS 25 /*!< Number of timing trials */
-
 void random_summa(int m, int n, int k, int px, int py, int pb, int iterations, int type) {
   int iter;
   double t_start, t_elapsed;
@@ -83,7 +81,7 @@ int main(int argc, char *argv[]) {
   MPI_Get_processor_name(hostname, &namelen); /* Get hostname of node */
   printf("Using Host:%s -- Rank %d out of %d\n", hostname, rank, np);
 
-  random_summa(mms->m, mms->n, mms->k, mms->x, mms->y, mms->b, NUM_TRIALS, mms->type);
+  random_summa(mms->m, mms->n, mms->k, mms->x, mms->y, mms->b, mms->t, mms->type);
 
   MPI_Finalize();
   return 0;
