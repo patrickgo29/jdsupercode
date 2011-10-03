@@ -13,42 +13,47 @@ cat $PBS_NODEFILE
 echo -e "\n\n"
 
 RESULTS=../Results
-OFILE=summa_single_node_strong_scaling.csv
-
 TRIALS=25
 
-export OMP_NUM_THREADS=1
 export OMP_SCHEDULE="dynamic,1"
 
-OFILE=single_node_scaling.csv
-for SIZE in 64 128 256 512 1024 2048 4096 8192 16384 32768
+OFILE=$RESULTS/single_node_scaling.csv
+for SIZE in 64 128 256 512 1024 2048 4096 8192 16384
 do
-	mpirun --hostfile $PBS_NODEFILE -np 1 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 1 -y 1 -b $PB --trials $TRIALS --naive >> $OFILE
-	mpirun --hostfile $PBS_NODEFILE -np 2 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 2 -y 1 -b $PB --trials $TRIALS --naive >> $OFILE
-	mpirun --hostfile $PBS_NODEFILE -np 4 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 2 -y 2 -b $PB --trials $TRIALS --naive >> $OFILE
-	mpirun --hostfile $PBS_NODEFILE -np 6 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 3 -y 2 -b $PB --trials $TRIALS --naive >> $OFILE
-	mpirun --hostfile $PBS_NODEFILE -np 8 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 4 -y 2 -b $PB --trials $TRIALS --naive >> $OFILE
-	mpirun --hostfile $PBS_NODEFILE -np 10 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 5 -y 2 -b $PB --trials $TRIALS --naive >> $OFILE
-	mpirun --hostfile $PBS_NODEFILE -np 12 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 4 -y 3 -b $PB --trials $TRIALS --naive >> $OFILE
-	mpirun --hostfile $PBS_NODEFILE -np 14 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 7 -y 2 -b $PB --trials $TRIALS --naive >> $OFILE
-	mpirun --hostfile $PBS_NODEFILE -np 16 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 4 -y 4 -b $PB --trials $TRIALS --naive >> $OFILE
-	mpirun --hostfile $PBS_NODEFILE -np 18 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 6 -y 3 -b $PB --trials $TRIALS --naive >> $OFILE
-	mpirun --hostfile $PBS_NODEFILE -np 20 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 5 -y 4 -b $PB --trials $TRIALS --naive >> $OFILE
-	mpirun --hostfile $PBS_NODEFILE -np 22 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 11 -y 2 -b $PB --trials $TRIALS --naive >> $OFILE
-	mpirun --hostfile $PBS_NODEFILE -np 24 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 6 -y 4 -b $PB --trials $TRIALS --naive >> $OFILE
+	for B in 1 2 8 16 32 64
+	do
+		mpirun --hostfile $PBS_NODEFILE -np 1 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 1 -y 1 -b $B --trials $TRIALS --naive >> $OFILE
+		mpirun --hostfile $PBS_NODEFILE -np 2 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 2 -y 1 -b $B --trials $TRIALS --naive >> $OFILE
+		mpirun --hostfile $PBS_NODEFILE -np 4 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 2 -y 2 -b $B --trials $TRIALS --naive >> $OFILE
+		mpirun --hostfile $PBS_NODEFILE -np 6 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 3 -y 2 -b $B --trials $TRIALS --naive >> $OFILE
+		mpirun --hostfile $PBS_NODEFILE -np 8 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 4 -y 2 -b $B --trials $TRIALS --naive >> $OFILE
+		mpirun --hostfile $PBS_NODEFILE -np 10 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 5 -y 2 -b $B --trials $TRIALS --naive >> $OFILE
+		mpirun --hostfile $PBS_NODEFILE -np 12 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 4 -y 3 -b $B --trials $TRIALS --naive >> $OFILE
+		mpirun --hostfile $PBS_NODEFILE -np 14 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 7 -y 2 -b $B --trials $TRIALS --naive >> $OFILE
+		mpirun --hostfile $PBS_NODEFILE -np 16 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 4 -y 4 -b $B --trials $TRIALS --naive >> $OFILE
+		mpirun --hostfile $PBS_NODEFILE -np 18 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 6 -y 3 -b $B --trials $TRIALS --naive >> $OFILE
+		mpirun --hostfile $PBS_NODEFILE -np 20 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 5 -y 4 -b $B --trials $TRIALS --naive >> $OFILE
+		mpirun --hostfile $PBS_NODEFILE -np 22 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 11 -y 2 -b $B --trials $TRIALS --naive >> $OFILE
+		mpirun --hostfile $PBS_NODEFILE -np 24 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 6 -y 4 -b $B --trials $TRIALS --naive >> $OFILE
+	done
 done
 
 OFILE=multi_node_scaling.csv
-for SIZE in 64 128 256 512 1024 2048 4096 8192 16384 32768
-	for NODES in {1..8}
+for SIZE in 512 1024 2048 4096 8192 16384
+	for NODES in 1 2 4 8
 	do
-		for THREADS in {1..24}
+		for B in 1 2 8 16 32 64
 		do
-			mpirun --hostfile $PBS_NODEFILE -np 1 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 1 -y 1 -b $SIZE --trials $TRIALS --openmp $THREADS >> $OFILE
+			PROCS=$(($NODES*8))
+			mpirun --hostfile $PBS_NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $SIZE -x $NODES -y $PROCS -b $B --trials $TRIALS --naive >> $OFILE
 		done
-
-		for THREADS in {1..24}
-			mpirun --hostfile $PBS_NODEFILE -np $1 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 1 -y 1 -b $SIZE --trials $TRIALS --mkl $THREADS >> $OFILE
+		for PPN in 1 2 4 8
+		do
+			for B in 1 2 8 16 32 64
+			PROCS=$(($NODES*$PPN))
+			THREADS=$((8/$PPN))
+			mpirun --hostfile $PBS_NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $SIZE -x $NODES -y $PPN -b $B --trials $TRIALS --openmp $THREADS >> $OFILE
+			mpirun --hostfile $PBS_NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $SIZE -x $NODES -y $PPN -b $B --trials $TRIALS --mkl $THREADS >> $OFILE
 		done
 	done
 done

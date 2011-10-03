@@ -63,20 +63,13 @@ void random_summa(mat_mul_specs * mms) {
   MPI_Barrier(MPI_COMM_WORLD);
   t_elapsed = MPI_Wtime() - t_start; /* Stop timer */
 
-  if (rank == 0) {
-    printf("%d, %d, %d, %d, %d, %d, %lf, %d, %lf, ", mms->m, mms->n, mms->k, mms->x, mms->y, mms->b, t_elapsed, mms->trials, t_elapsed / mms->trials);
-    if(mms->type == 0)
-      printf("naive, ");
-    if(mms->type == 1)
-      printf("openmp, ");
-    if(mms->type == 2)
-      printf("mkl, ");
-    printf("%d\n", mms->threads);
-  }
-
   deallocate_matrix(A_block);
   deallocate_matrix(B_block);
   deallocate_matrix(C_block);
+
+  if (rank == 0) {
+    printf("%d, %d, %d, %d, %d, %d, %lf, %d, %lf\n", mms->m, mms->n, mms->k, mms->x, mms->y, mms->b, t_elapsed, mms->trials, t_elapsed / mms->trials);
+  }
 }
 
 /** Program start */
