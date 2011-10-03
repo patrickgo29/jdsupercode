@@ -1,6 +1,6 @@
 #PBS -q class
 #PBS -l nodes=1:sixcore
-#PBS -l walltime=00:05:00
+#PBS -l walltime=01:00:00
 #PBS -N Proj1
 
 export OMPI_MCA_mpi_yield_when_idle=0
@@ -12,31 +12,44 @@ echo $PWD
 cat $PBS_NODEFILE
 echo -e "\n\n"
 
+RESULTS=../Results
+OFILE=summa_single_node_strong_scaling.csv
+
+TRIALS=25
+
 export OMP_NUM_THREADS=1
 export OMP_SCHEDULE="dynamic,1"
 
-echo "testing naive"
-for PB in 1
+OFILE=single_node_scaling.csv
+for SIZE in 64 128 256 512 1024 2048 4096 8192 16384 32768
 do
-	mpirun --hostfile $PBS_NODEFILE -np 1 ./time_summa -m 256 -n 256 -k 256 -x 1 -y 1 -b $PB --trials 25 --naive > summa_single_node_naive_strong_scaling.csv
-	mpirun --hostfile $PBS_NODEFILE -np 2 ./time_summa -m 256 -n 256 -k 256 -x 2 -y 1 -b $PB --trials 25 --naive >> summa_single_node_naive_strong_scaling.csv
-	mpirun --hostfile $PBS_NODEFILE -np 4 ./time_summa -m 256 -n 256 -k 256 -x 2 -y 2 -b $PB --trials 25 --naive >> summa_single_node_naive_strong_scaling.csv
-	mpirun --hostfile $PBS_NODEFILE -np 6 ./time_summa -m 256 -n 256 -k 256 -x 3 -y 2 -b $PB --trials 25 --naive >> summa_single_node_naive_strong_scaling.csv
-	mpirun --hostfile $PBS_NODEFILE -np 8 ./time_summa -m 256 -n 256 -k 256 -x 4 -y 2 -b $PB --trials 25 --naive >> summa_single_node_naive_strong_scaling.csv
-	mpirun --hostfile $PBS_NODEFILE -np 10 ./time_summa -m 256 -n 256 -k 256 -x 5 -y 2 -b $PB --trials 25 --naive >> summa_single_node_naive_strong_scaling.csv
-	mpirun --hostfile $PBS_NODEFILE -np 12 ./time_summa -m 256 -n 256 -k 256 -x 4 -y 3 -b $PB --trials 25 --naive >> summa_single_node_naive_strong_scaling.csv
-	mpirun --hostfile $PBS_NODEFILE -np 14 ./time_summa -m 256 -n 256 -k 256 -x 7 -y 2 -b $PB --trials 25 --naive >> summa_single_node_naive_strong_scaling.csv
-	mpirun --hostfile $PBS_NODEFILE -np 16 ./time_summa -m 256 -n 256 -k 256 -x 4 -y 4 -b $PB --trials 25 --naive >> summa_single_node_naive_strong_scaling.csv
-	mpirun --hostfile $PBS_NODEFILE -np 18 ./time_summa -m 256 -n 256 -k 256 -x 6 -y 3 -b $PB --trials 25 --naive >> summa_single_node_naive_strong_scaling.csv
-	mpirun --hostfile $PBS_NODEFILE -np 20 ./time_summa -m 256 -n 256 -k 256 -x 5 -y 4 -b $PB --trials 25 --naive >> summa_single_node_naive_strong_scaling.csv
-	mpirun --hostfile $PBS_NODEFILE -np 22 ./time_summa -m 256 -n 256 -k 256 -x 11 -y 2 -b $PB --trials 25 --naive >> summa_single_node_naive_strong_scaling.csv
-	mpirun --hostfile $PBS_NODEFILE -np 24 ./time_summa -m 256 -n 256 -k 256 -x 6 -y 4 -b $PB --trials 25 --naive >> summa_single_node_naive_strong_scaling.csv
+	mpirun --hostfile $PBS_NODEFILE -np 1 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 1 -y 1 -b $PB --trials $TRIALS --naive >> $OFILE
+	mpirun --hostfile $PBS_NODEFILE -np 2 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 2 -y 1 -b $PB --trials $TRIALS --naive >> $OFILE
+	mpirun --hostfile $PBS_NODEFILE -np 4 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 2 -y 2 -b $PB --trials $TRIALS --naive >> $OFILE
+	mpirun --hostfile $PBS_NODEFILE -np 6 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 3 -y 2 -b $PB --trials $TRIALS --naive >> $OFILE
+	mpirun --hostfile $PBS_NODEFILE -np 8 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 4 -y 2 -b $PB --trials $TRIALS --naive >> $OFILE
+	mpirun --hostfile $PBS_NODEFILE -np 10 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 5 -y 2 -b $PB --trials $TRIALS --naive >> $OFILE
+	mpirun --hostfile $PBS_NODEFILE -np 12 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 4 -y 3 -b $PB --trials $TRIALS --naive >> $OFILE
+	mpirun --hostfile $PBS_NODEFILE -np 14 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 7 -y 2 -b $PB --trials $TRIALS --naive >> $OFILE
+	mpirun --hostfile $PBS_NODEFILE -np 16 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 4 -y 4 -b $PB --trials $TRIALS --naive >> $OFILE
+	mpirun --hostfile $PBS_NODEFILE -np 18 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 6 -y 3 -b $PB --trials $TRIALS --naive >> $OFILE
+	mpirun --hostfile $PBS_NODEFILE -np 20 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 5 -y 4 -b $PB --trials $TRIALS --naive >> $OFILE
+	mpirun --hostfile $PBS_NODEFILE -np 22 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 11 -y 2 -b $PB --trials $TRIALS --naive >> $OFILE
+	mpirun --hostfile $PBS_NODEFILE -np 24 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 6 -y 4 -b $PB --trials $TRIALS --naive >> $OFILE
 done
 
-#echo "testing openmp"
-#mpirun --hostfile $PBS_NODEFILE -np 64 ./time_summa -m 256 -n 256 -k 256 -x 8 -y 8 -b 1 --trials 25 --openmp 1
+OFILE=multi_node_scaling.csv
+for SIZE in 64 128 256 512 1024 2048 4096 8192 16384 32768
+	for NODES in {1..8}
+	do
+		for THREADS in {1..24}
+		do
+			mpirun --hostfile $PBS_NODEFILE -np 1 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 1 -y 1 -b $SIZE --trials $TRIALS --openmp $THREADS >> $OFILE
+		done
 
-#echo "testing mkl"
-#mpirun --hostfile $PBS_NODEFILE -np 64 ./time_summa -m 256 -n 256 -k 256 -x 8 -y 8 -b 1 --trials 25 --mkl 1
-
+		for THREADS in {1..24}
+			mpirun --hostfile $PBS_NODEFILE -np $1 ./time_summa -m $SIZE -n $SIZE -k $SIZE -x 1 -y 1 -b $SIZE --trials $TRIALS --mkl $THREADS >> $OFILE
+		done
+	done
+done
 # eof

@@ -19,26 +19,19 @@
  * Test the multiplication of two matrices of all ones
  **/
 void random_multiply(mat_mul_specs * mms) {
-  int m, n, k, iterations;
-  m = mms->m;
-  n = mms->n;
-  k = mms->k;
-  iterations = mms->trials;
-  int iter;
   double *A, *B, *C;
   double t_start, t_elapsed;
 
-  //printf("Timing Matrix Multiply m=%d n=%d k=%d iterations=%d....", m, n, k, iterations);
-
   /* Allocate matrices */
-  A = random_matrix(m, k);
-  B = random_matrix(k, n);
-  C = random_matrix(m, n);
+  A = random_matrix(mms->m, mms->k);
+  B = random_matrix(mms->k, mms->n);
+  C = random_matrix(mms->m, mms->n);
 
   t_start = MPI_Wtime(); /* Start timer */
 
   /* perform several Matric Mulitplies back-to-back */
-  for (iter = 0; iter < iterations; iter++) {
+  int iter;
+  for (iter = 0; iter < mms->trials; iter++) {
     /* C = (1.0/k)*(A*B) + 0.0*C */
     local_mms(mms, 1.0, A, mms->m, B, mms->k, 1.0, C, mms->m);
   } /* iter */
