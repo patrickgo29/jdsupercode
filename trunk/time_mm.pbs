@@ -17,18 +17,18 @@ echo -e "\n\n"
 echo "testing naive"
 mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 -trials 25 --naive
 
-for SIZE in 256 512 1024 2048 4096 8192 16384 32768
-do
+#for SIZE in 256 512 1024 2048 4096 8192 16384 32768
+#do
 	rm -f $RESULTS/local_mm_single_node_openmp_strong_scaling.csv
-	for THREADS in {1..24}
-	do
+#	for THREADS in {1..24}
+#	do
 		mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 -trials 25 --openmp $THREADS >> $RESULTS/local_mm_single_node_openmp_strong_scaling.csv
-	done
+#	done
 	
 	rm -f $RESULTS/local_mm_single_node_mkl_strong_scaling.csv
-	for THREADS in {1..24}
-	do
+#	for THREADS in {1..24}
+#	do
 		mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 -trials 25 --mkl $THREADS >> $RESULTS/local_mm_single_node_mkl_strong_scaling.csv
-	done
-done
+#	done
+#done
 # eof

@@ -14,19 +14,33 @@ void local_mm(const int m, const int n, const int k,
               const double beta, 
               double *C, const int ldc);
 
+void local_mm_openmp(const int m, const int n, const int k,
+              const double alpha,
+              const double *A, const int lda, 
+              const double *B, const int ldb,
+              const double beta, 
+              double *C, const int ldc);
+
+void local_mm_mkl(const int m, const int n, const int k,
+              const double alpha,
+              const double *A, const int lda, 
+              const double *B, const int ldb,
+              const double beta, 
+              double *C, const int ldc);
+
 void local_mms(mat_mul_specs * mms,
                 const double alpha,
                 const double *A, const int lda,
                 const double *B, const int ldb,
                 const double beta,
-                const double *C, const int ldc);
+                double *C, const int ldc);
 
-void local_mm_typed(const int m, const int n, const int k, 
+void local_mm_typed(const int m, const int n, const int k,
                     const double alpha,
-                    const double *A, const int lda, 
+                    const double *A, const int lda,
                     const double *B, const int ldb,
-                    const double beta, 
-                    double *C, const int ldc, 
+                    const double beta,
+                    double *C, const int ldc,
                     int type);
 
 #endif

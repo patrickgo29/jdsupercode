@@ -57,7 +57,7 @@ bool verify_matrix_bool(int m, int n, double *A, double *B) {
  *  to CC, the true solution.
  **/
 bool random_matrix_test(int m, int n, int k, int px, int py, int panel_size, int type) {
-  int proc = 0, passed_test = 0, group_passed = 0;
+  int passed_test = 0, group_passed = 0;
   int num_procs = px * py;
   int rank = 0;
   double *A, *B, *C, *CC, *A_block, *B_block, *C_block, *CC_block;
@@ -270,6 +270,9 @@ int main(int argc, char *argv[]) {
     exit_on_fail( random_matrix_test(128, 128, 128, 1, 16, 1, type));
     exit_on_fail( random_matrix_test(128, 128, 128, 16, 1, 1, type));
   }
-  finalize: MPI_Finalize();
+#ifdef DEBUG
+  finalize: 
+#endif
+  MPI_Finalize();
   return 0;
 }

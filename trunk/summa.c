@@ -16,6 +16,7 @@
 
 #include "comm_args.h"
 #include "local_mm.h"
+#include "summa.h"
 
 /**
  * Distributed Matrix Multiply using the SUMMA algorithm
@@ -61,6 +62,11 @@ void summa_mms(mat_mul_specs * mms,
 void summa_typed(int m, int n, int k,
 	double *Ablock, double *Bblock, double *Cblock,
 	int procGridX, int procGridY, int panel_size, int type) {
+	
+	if(procGridX == 1 && procGridY == 1 && panel_size == k){
+		local_mm_typed(m, n, k, 1.0, Ablock, m, Bblock, k, 1.0, Cblock, m, type);
+		return;
+	}
 //////////////////////////////////////////////////////////////////////////////
 	//Setup MPI variables
 	int rank, size;
@@ -152,7 +158,9 @@ void summa_typed(int m, int n, int k,
             t1_bcast_A = MPI_Wtime();
         }
 #endif
-        MPI_Bcast(panel_buf_A, size_pbA, MPI_DOUBLE, first_row_rank, row_comm);
+                if(size != 1)
+        	        MPI_Bcast(panel_buf_A, size_pbA, MPI_DOUBLE, first_row_rank, row_comm);
+	
 #ifdef TIMING_BCAST
         if (rank == 0) {
             t2_bcast_A = MPI_Wtime();
@@ -177,7 +185,8 @@ void summa_typed(int m, int n, int k,
             t1_bcast_B = MPI_Wtime(); 
         }
 #endif
-        MPI_Bcast(panel_buf_B, size_pbB, MPI_DOUBLE, first_col_rank, col_comm);
+                if(size != 1)
+                        MPI_Bcast(panel_buf_B, size_pbB, MPI_DOUBLE, first_col_rank, col_comm);
 #ifdef TIMING_BCAST
         if (rank == 0) {
             t2_bcast_B = MPI_Wtime();
@@ -240,8 +249,9 @@ void summa_typed(int m, int n, int k,
                 temp_bcast_A = 0;
                 t1_bcast_A = MPI_Wtime();
             }
-#endif	
-            MPI_Bcast(dest_pbA, size_Bcast, MPI_DOUBLE, j, row_comm); 
+#endif
+                        if(size != 1)
+                                MPI_Bcast(dest_pbA, size_Bcast, MPI_DOUBLE, j, row_comm); 
 #ifdef TIMING_BCAST
             if (rank == 0) {
                 t2_bcast_A = MPI_Wtime();
@@ -315,7 +325,8 @@ void summa_typed(int m, int n, int k,
                 t1_bcast_B = MPI_Wtime();
             }
 #endif
-            MPI_Bcast(dest_pbB, size_Bcast, MPI_DOUBLE, j, col_comm);
+                        if(size != 1)
+                                MPI_Bcast(dest_pbB, size_Bcast, MPI_DOUBLE, j, col_comm);
 #ifdef TIMING_BCAST
             if (rank == 0) {
                 t2_bcast_B = MPI_Wtime();

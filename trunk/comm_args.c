@@ -48,7 +48,7 @@ mat_mul_specs * getMatMulSpecs(int argc, char **argv){
 				mms->b = atoi(optarg);
 				break;
 			case ':':
-				printf("argument %s requires a parameter\n", optopt);
+				printf("argument %c requires a parameter\n", optopt);
 				break;
 			default:
 				break;

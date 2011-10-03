@@ -1,3 +1,5 @@
+#ifndef __SUMMA_H__
+#define __SUMMA_H__
 /**
  *  \file summa.h
  *  \brief Implementation of Scalable Universal 
@@ -40,3 +42,5 @@ void summa_typed(int m, int n, int k,
 		 double *Ablock, double *Bblock, double *Cblock,
     		 int procGridX, int procGridY, int panel_size, 
 		 int type);
+
+#endif
