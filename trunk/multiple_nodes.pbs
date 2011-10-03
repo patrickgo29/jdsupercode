@@ -1,0 +1,60 @@
+#PBS -q research
+#PBS -l nodes=8:sixcore
+#PBS -l walltime=5:59:59
+#PBS -N multiple_nodes
+
+cd $PBS_O_WORKDIR
+
+date
+hostname
+echo $PWD
+cat $PBS_NODEFILE
+
+RESULTS=./Results
+OFILE=$RESULTS/multple_nodes.csv
+
+TRIALS=25
+for SIZE in 384 768 1536 3072 6144 12288 24576
+do
+	for NODES in 1 2 4 8
+	do
+		head -n $NODES $PBS_NODEFILE > NODEFILE
+		PPN=12
+		PROCS=$(($NODES * $PPN))
+		TPP=1
+		for B in 1 2 4
+		do
+			date
+			echo -n "summa, ${NODES}, ${PPN}, ${TPP}, " >> $OFILE
+			mpirun --hostfile NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $SIZE -x $NODES -y $PPN -b $B --naive --trials $TRIALS >> $OFILE
+		done
+
+		for PPN in 1 2 4 6 12
+		do
+			PROCS=$(($NODES * $PPN))
+			TPP=$((12/$PPN))
+			for B in 1 2 4
+			do
+				date
+				echo -n "summa, ${NODES}, ${PPN}, ${TPP}, " >> $OFILE
+				mpirun --hostfile NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $SIZE -x $NODES -y $PPN -b $B --openmp $TPP --trials $TRIALS >> $OFILE
+			done
+		done
+	
+		for PPN in 1 2 4 6 12
+		do
+			PROCS=$(($NODES * $PPN))
+			TPP=$((12/$PPN))
+			for B in 1 2 4
+			do
+				date
+				echo -n "summa, ${NODES}, ${PPN}, ${TPP}, " >> $OFILE
+				mpirun --hostfile NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $SIZE -x $NODES -y $PPN -b $B --mkl $TPP --trials $TRIALS >> $OFILE
+			done
+		done
+	done
+done
+rm -f NODEFILE
+echo "FINISHED!!!"
+date
+# eof

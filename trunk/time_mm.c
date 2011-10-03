@@ -43,14 +43,7 @@ void random_multiply(mat_mul_specs * mms) {
   deallocate_matrix(B);
   deallocate_matrix(C);
 
-  printf("%d, %d, %d, %lf, %d, %lf, ", mms->m, mms->n, mms->k, t_elapsed, mms->trials, t_elapsed / mms->trials);
-  if(mms->type == 0)
-    printf("naive, ");
-  if(mms->type == 1)
-    printf("openmp, ");
-  if(mms->type == 2)
-    printf("mkl, ");
-  printf("%d\n", mms->threads);
+  printf("%d, %d, %d, %lf, %d, %lf\n", mms->m, mms->n, mms->k, t_elapsed, mms->trials, t_elapsed / mms->trials);
 }
 
 int main(int argc, char *argv[]) {
