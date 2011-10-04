@@ -24,7 +24,7 @@ colnames(mn_data) <- c("alg","nodes","ppn","tpp","imp","m","n","k","x","y","b","
 ssn_data <- transform(ssn_data, nodes=as.numeric(nodes), ppn=as.numeric(ppn),
                       tpp=as.numeric(tpp),m=as.numeric(m),n=as.numeric(n),
                       k=as.numeric(k),x=as.numeric(x),y=as.numeric(y),
-                      b=as.numeric(b),tet=as.numeric(tet),trials=as.numeric(trials),
+                      b=as.factor(b),tet=as.numeric(tet),trials=as.numeric(trials),
                       tpt=as.numeric(tpt), alg=as.character(alg), 
                       imp=as.character(imp));
 mm_sn_data <- transform(mm_sn_data, nodes=as.numeric(nodes), ppn=as.numeric(ppn),
@@ -35,7 +35,7 @@ mm_sn_data <- transform(mm_sn_data, nodes=as.numeric(nodes), ppn=as.numeric(ppn)
 mn_data <- transform(mn_data, nodes=as.numeric(nodes), ppn=as.numeric(ppn),
                       tpp=as.numeric(tpp),m=as.numeric(m),n=as.numeric(n),
                       k=as.numeric(k),x=as.numeric(x),y=as.numeric(y),
-                      b=as.numeric(b),tet=as.numeric(tet),trials=as.numeric(trials),
+                      b=as.factor(b),tet=as.numeric(tet),trials=as.numeric(trials),
                       tpt=as.numeric(tpt), alg=as.character(alg), 
                       imp=as.character(imp));
 
@@ -45,9 +45,9 @@ mm_sn_data$tpt_mil = 1000*mm_sn_data$tpt;
 mn_data$tpt_mil = 1000*mn_data$tpt;
 
 # Transform time to log scale
-ssn_data$logtpt = log2(ssn_data$tpt_mil);
-mm_sn_data$logtpt = log2(mm_sn_data$tpt_mil);
-mn_data$logtpt = log2(mn_data$tpt_mil);
+ssn_data$logtpt = log10(ssn_data$tpt_mil);
+mm_sn_data$logtpt = log10(mm_sn_data$tpt_mil);
+mn_data$logtpt = log10(mn_data$tpt_mil);
 
 ###### PLOTS #######################################################
 # 1. Plots for single node matrix multiplication. 
@@ -59,46 +59,64 @@ mn_data$logtpt = log2(mn_data$tpt_mil);
 # Note: names specify implementation, number of nodes, and panel block size
 
 # 1. plots for single node matrix multiply (MM_SN)
-for (i in unique(mm_sn_data$imp)) {          # for each unique implementation,
+for (i in unique(mm_sn_data$m)) {          # for each unique implementation,
     for (j in unique(mm_sn_data$nodes)) {    # and node count
          # get the subset of data we want
-         tempdata = mm_sn_data[mm_sn_data$imp==i & mm_sn_data$nodes==j,];
+         tempdata = mm_sn_data[mm_sn_data$m==i & mm_sn_data$nodes==j,];
 
          # naming
          tempname = paste("mm_sn-",as.character(i),"-",as.character(j),
                              "nodes",sep="");
             
          # plot and save to the specified savefolder and filename
-         p <- ggplot(tempdata, aes(x=tpp, y=logtpt, group=m));
-         p + geom_line(aes(colour=m)) + opts(title=tempname);
+         p <- ggplot(tempdata, aes(x=tpp, y=logtpt, group=imp));
+         p + geom_line(aes(colour=imp)) + opts(title=tempname);
          ggsave(paste(results_folder,tempname,".pdf",sep=""),scale=1);
     }
 }
 
 # 2. plot single nodes for 'naive' case. we're doing this because
 # we are using threads instead of processes. only iterate over panel block sizes
-for (k in unique(ssn_data$b)) {
-    tempdata = ssn_data[ssn_data$imp=='naive' & ssn_data$b==k,];
-    tempname = paste("ssn-naive-",as.character(k),"panel",sep="");
-    p <- ggplot(tempdata, aes(x=ppn, y=logtpt, group=m));
-    p + geom_line(aes(colour=m)) + opts(title=tempname);
-    ggsave(paste(results_folder,tempname,".pdf",sep=""),scale=1);
+for (i in unique(mm_sn_data$m)) {
+        tempdata = ssn_data[ssn_data$imp=='naive' &
+                            ssn_data$m==i,];
+        tempname = paste("ssn-naive-",as.character(i),sep="");
+        p <- ggplot(tempdata, aes(x=ppn, y=logtpt, group=b, colour=b));
+        p + geom_line() + opts(title=tempname); 
+        ggsave(paste(results_folder,tempname,".pdf",sep=""),scale=1);
 }
 
 # 3. plots for multiple nodes (MN)
 # max 8 threads per node
 # only openMP/MKL uses threads
-for (i in unique(mn_data$imp)[2:3]) {         # for each non-naive implementation  
+
+# find best naive implementation from above for each panel size
+sizes = unique(ssn_data$m);
+ix = 0;
+minPanel = c();
+for (i in sizes) {
+    ix=ix+1;
+    tempdata = ssn_data[ssn_data$imp=='naive' & ssn_data$m==i,];
+    means    = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
+    colnames(means) = c("panels","times");
+    panelTimes = data.frame(unique(as.numeric(as.character(tempdata$b))),means$times);
+    colnames(panelTimes) = c("panels","times");
+    minPanel[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$panels;
+}
+minPanels = data.frame(sizes,minPanel);
+
+
+for (i in unique(mn_data$m)) {         # for each non-naive implementation  
     for (j in unique(mn_data$nodes)) {        # node count,
         for (k in unique(mn_data$b)) {        # panel size,
-            tempdata = mn_data[mn_data$imp==i &
+            tempdata = mn_data[mn_data$m==i &
                                mn_data$nodes==j &
                                mn_data$b==k,];
             tempname = paste("mn-",as.character(i),"-",as.character(j),"nodes",
                              "-",as.character(k),"panel",sep="");
 
-            p <- ggplot(tempdata, aes(x=ppn, y=logtpt, group=m));
-            p + geom_line(aes(colour=m)) + opts(title=tempname);
+            p <- ggplot(tempdata, aes(x=ppn, y=logtpt, group=imp));
+            p + geom_line(aes(colour=imp)) + opts(title=tempname);
             ggsave(paste(results_folder,tempname,".pdf",sep=""),scale=1);
         }
     }
