@@ -50,15 +50,10 @@ mm_sn_data$logtpt = log10(mm_sn_data$tpt_mil);
 mn_data$logtpt = log10(mn_data$tpt_mil);
 
 ###### PLOTS #######################################################
-# 1. Plots for single node matrix multiplication. 
-# 2. Plots for single node SUMMA multiplication.
-# 3. Plots for multi node SUMMA multiplication.
-#
 # Note: by default, ggplot always clears the screen and uses the entire device
-# 
 # Note: names specify implementation, number of nodes, and panel block size
 
-# 1. plots for single node matrix multiply (MM_SN)
+# 1. plots for single node matrix multiply (MM_SN) ***********************
 
 # find best naive implementation from above for each panel size
 sizes = unique(ssn_data$m);
@@ -76,7 +71,25 @@ for (i in sizes) {
     t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$times;
 }
 minPanels = data.frame(b,m,t);
-table_naive_ssn_panels = minPanels;
+table_min_naive_ssn_panels = minPanels;
+
+sizes = unique(ssn_data$m);
+ix = 0;
+b=c(); m=c(); t=c();
+for (i in sizes) {
+    ix=ix+1;
+    tempdata = ssn_data[ssn_data$imp=='naive' & ssn_data$m==i,];
+    means    = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
+    colnames(means) = c("panels","times");
+    panelTimes = data.frame(unique(as.numeric(as.character(tempdata$b))),means$times);
+    colnames(panelTimes) = c("panels","times");
+    b[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$panels;
+    m[ix] = i;
+    t[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$times;
+}
+maxPanels = data.frame(b,m,t);
+table_max_naive_ssn_panels = maxPanels;
+
 
 for (i in unique(mm_sn_data$m)) {          # for each unique size,
     for (j in unique(mm_sn_data$nodes)) {    # and node count
@@ -104,7 +117,7 @@ for (i in unique(mm_sn_data$m)) {          # for each unique size,
     }
 }
 
-# 3. plots for multiple nodes (MN)
+# 3. plots for multiple nodes (MN) ****************************************
 # max 8 threads per node
 # only openMP/MKL uses threads
 
@@ -128,9 +141,9 @@ for (i in sizes) {
     }
 }
 naive_minPanels = data.frame(naive_b,naive_m,naive_n,naive_t);
-table_naive_mn_panels = naive_minPanels;
+table_min_naive_mn_panels = naive_minPanels;
 
-# figure out best blocking for openmp and mkl implementations 
+# figure out best blocking for openmp implementation 
 # for each size and node count
 ix = 0;
 openmp_b = c(); openmp_m = c(); openmp_n = c(); openmp_t = c();
@@ -149,9 +162,9 @@ for (i in sizes) {
    }
 }
 openmp_minPanels = data.frame(openmp_b,openmp_m,openmp_n,openmp_t);
-table_openmp_mn_panels = openmp_minPanels;
+table_min_openmp_mn_panels = openmp_minPanels;
 
-# figure out best blocking for mkl and mkl implementations 
+# figure out best blocking for mkl implementations 
 # for each size and node count
 ix = 0;
 mkl_b = c(); mkl_m = c(); mkl_n = c(); mkl_t = c();
@@ -166,12 +179,72 @@ for (i in sizes) {
       mkl_b[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$panels;
       mkl_m[ix] = i;
       mkl_n[ix] = j; #slight abuse of notation =O
-      mkl_t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$panels;
+      mkl_t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$times;
 
    }
 }           
 mkl_minPanels = data.frame(mkl_b,mkl_m,mkl_n,mkl_t);
-table_mkl_mn_panels = mkl_minPanels;
+table_min_mkl_mn_panels = mkl_minPanels;
+
+# DO THE SAME FOR MAX
+sizes = unique(mn_data$m);
+nodes = unique(mn_data$nodes);
+ix = 0;
+naive_b = c(); naive_m = c(); naive_n = c(); naive_t = c();
+for (i in sizes) {
+    for (j in nodes) {
+      ix=ix+1;
+      tempdata = mn_data[mn_data$imp=='naive' & mn_data$m==i & mn_data$nodes==j,];
+      means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
+      colnames(means) = c("panels","times");
+      panelTimes = data.frame(unique(as.numeric(as.character(tempdata$b))),means$times);
+      colnames(panelTimes) = c("panels","times");
+      naive_b[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$panels;
+      naive_m[ix] = i;
+      naive_n[ix] = j; #slight abuse of notation =O
+      naive_t[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$times;
+    }
+}
+naive_maxPanels = data.frame(naive_b,naive_m,naive_n,naive_t);
+table_max_naive_mn_panels = naive_maxPanels;
+
+ix = 0;
+openmp_b = c(); openmp_m = c(); openmp_n = c(); openmp_t = c();
+for (i in sizes) {
+   for (j in nodes) {
+       ix=ix+1;
+       tempdata = mn_data[mn_data$imp=='openmp' & mn_data$m==i & mn_data$nodes==j,];
+       means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
+       colnames(means) = c("panels","times");
+      panelTimes = data.frame(unique(as.numeric(as.character(tempdata$b))),means$times);
+       colnames(panelTimes) = c("panels","times");
+       openmp_b[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$panels;
+       openmp_m[ix] = i;
+       openmp_n[ix] = j; #slight abuse of notation, here n is the node count =O
+       openmp_t[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$times;
+   }
+}
+openmp_maxPanels = data.frame(openmp_b,openmp_m,openmp_n,openmp_t);
+table_max_openmp_mn_panels = openmp_maxPanels;
+
+ix = 0;
+mkl_b = c(); mkl_m = c(); mkl_n = c(); mkl_t = c();
+for (i in sizes) {
+   for (j in nodes) {
+      ix=ix+1;
+      tempdata = mn_data[mn_data$imp=='mkl' & mn_data$m==i & mn_data$nodes==j,];
+      means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
+      colnames(means) = c("panels","times");
+      panelTimes = data.frame(unique(as.numeric(as.character(tempdata$b))),means$times);
+       colnames(panelTimes) = c("panels","times");
+      mkl_b[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$panels;
+      mkl_m[ix] = i;
+      mkl_n[ix] = j; #slight abuse of notation =O
+      mkl_t[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$times;
+   }
+}           
+mkl_maxPanels = data.frame(mkl_b,mkl_m,mkl_n,mkl_t);
+table_max_mkl_mn_panels = mkl_maxPanels;
 
 # plotting
 for (i in unique(mn_data$m)) {                # for each non-naive implementation
@@ -216,7 +289,7 @@ for (i in unique(mn_data$m)) {                # for each non-naive implementatio
 # clean up
 rm(results_folder,tempdata,tempname);
 
-###### ANALYSIS ######################################
+###### ANALYSIS #####################################################
 # 1. Print configuration with lowest tpt for each size matrix
 
 for (i in unique(ssn_data$m)) {
@@ -233,8 +306,12 @@ for (i in unique(mn_data$m)) {
 }  
 
 # 2. Print tables
-print(table_naive_ssn_panels)
-print(table_naive_mn_panels)
-print(table_openmp_mn_panels)
-print(table_mkl_mn_panels)
+print(table_max_naive_ssn_panels)
+print(table_min_naive_mn_panels)
+print(table_min_openmp_mn_panels)
+print(table_min_mkl_mn_panels)
+print(table_min_naive_ssn_panels)
+print(table_max_naive_mn_panels)
+print(table_max_openmp_mn_panels)
+print(table_max_mkl_mn_panels)
  
