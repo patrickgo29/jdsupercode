@@ -59,10 +59,39 @@ mn_data$logtpt = log10(mn_data$tpt_mil);
 # Note: names specify implementation, number of nodes, and panel block size
 
 # 1. plots for single node matrix multiply (MM_SN)
-for (i in unique(mm_sn_data$m)) {          # for each unique implementation,
+
+# find best naive implementation from above for each panel size
+sizes = unique(ssn_data$m);
+ix = 0;
+b=c(); m=c(); t=c();
+for (i in sizes) {
+    ix=ix+1;
+    tempdata = ssn_data[ssn_data$imp=='naive' & ssn_data$m==i,];
+    means    = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
+    colnames(means) = c("panels","times");
+    panelTimes = data.frame(unique(as.numeric(as.character(tempdata$b))),means$times);
+    colnames(panelTimes) = c("panels","times");
+    b[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$panels;
+    m[ix] = i;
+    t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$times;
+}
+minPanels = data.frame(b,m,t);
+table_naive_ssn_panels = minPanels;
+
+for (i in unique(mm_sn_data$m)) {          # for each unique size,
     for (j in unique(mm_sn_data$nodes)) {    # and node count
          # get the subset of data we want
          tempdata = mm_sn_data[mm_sn_data$m==i & mm_sn_data$nodes==j,];
+
+         # find corresponding naive implementation and append to our data
+         panel = minPanels[minPanels$m==i,]$b;
+         naivedata = ssn_data[ssn_data$imp=='naive' & ssn_data$m==i &
+                              ssn_data$b==panel,];
+         naivedata = naivedata[c("alg","nodes","ppn","imp","tpp","m","n","k","tet",
+                                 "trials","tpt","tpt_mil","logtpt")];
+         naivedata[c("tpp")] = naivedata[c("ppn")];  #quick hack for plotting          
+         tempdata = rbind(tempdata,naivedata);
+
 
          # naming
          tempname = paste("mm_sn-",as.character(i),"-",as.character(j),
@@ -75,62 +104,113 @@ for (i in unique(mm_sn_data$m)) {          # for each unique implementation,
     }
 }
 
-# 2. plot single nodes for 'naive' case. we're doing this because
-# we are using threads instead of processes. only iterate over panel block sizes
-for (i in unique(mm_sn_data$m)) {
-        tempdata = ssn_data[ssn_data$imp=='naive' &
-                            ssn_data$m==i,];
-        tempname = paste("ssn-naive-",as.character(i),sep="");
-        p <- ggplot(tempdata, aes(x=ppn, y=logtpt, group=b, colour=b));
-        p + geom_line() + opts(title=tempname); 
-        ggsave(paste(results_folder,tempname,".pdf",sep=""),scale=1);
-}
-
 # 3. plots for multiple nodes (MN)
 # max 8 threads per node
 # only openMP/MKL uses threads
 
-# find best naive implementation from above for each panel size
-sizes = unique(ssn_data$m);
+# figure out best blocking for naive implementations for each size and node count
+sizes = unique(mn_data$m);
+nodes = unique(mn_data$nodes);
 ix = 0;
-minPanel = c();
+naive_b = c(); naive_m = c(); naive_n = c(); naive_t = c();
 for (i in sizes) {
-    ix=ix+1;
-    tempdata = ssn_data[ssn_data$imp=='naive' & ssn_data$m==i,];
-    means    = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
-    colnames(means) = c("panels","times");
-    panelTimes = data.frame(unique(as.numeric(as.character(tempdata$b))),means$times);
-    colnames(panelTimes) = c("panels","times");
-    minPanel[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$panels;
-}
-minPanels = data.frame(sizes,minPanel);
-
-
-for (i in unique(mn_data$m)) {         # for each non-naive implementation  
-    for (j in unique(mn_data$nodes)) {        # node count,
-        for (k in unique(mn_data$b)) {        # panel size,
-            tempdata = mn_data[mn_data$m==i &
-                               mn_data$nodes==j &
-                               mn_data$b==k,];
-            tempname = paste("mn-",as.character(i),"-",as.character(j),"nodes",
-                             "-",as.character(k),"panel",sep="");
-
-            p <- ggplot(tempdata, aes(x=ppn, y=logtpt, group=imp));
-            p + geom_line(aes(colour=imp)) + opts(title=tempname);
-            ggsave(paste(results_folder,tempname,".pdf",sep=""),scale=1);
-        }
+    for (j in nodes) {
+      ix=ix+1;
+      tempdata = mn_data[mn_data$imp=='naive' & mn_data$m==i & mn_data$nodes==j,];
+      means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
+      colnames(means) = c("panels","times");
+      panelTimes = data.frame(unique(as.numeric(as.character(tempdata$b))),means$times);
+      colnames(panelTimes) = c("panels","times");
+      naive_b[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$panels;
+      naive_m[ix] = i;
+      naive_n[ix] = j; #slight abuse of notation =O
+      naive_t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$times;
     }
 }
+naive_minPanels = data.frame(naive_b,naive_m,naive_n,naive_t);
+table_naive_mn_panels = naive_minPanels;
 
-# 3(cont). plot multiple nodes in 'naive' case. doing this because 
-# naive case does not vary in threads like the others do. iterate over
-# panel block size and nodes
-for (k in unique(mn_data$b)) {
-        tempdata = mn_data[mn_data$imp=='naive' & mn_data$b==k,];
-        tempname = paste("mn-naive-",as.character(k),"panel",sep="");
-        p <- ggplot(tempdata, aes(x=nodes,y=logtpt,group=m));
-        p + geom_line(aes(colour=m)) + opts(title=tempname);
-        ggsave(paste(results_folder,tempname,".pdf",sep=""),scale=1);
+# figure out best blocking for openmp and mkl implementations 
+# for each size and node count
+ix = 0;
+openmp_b = c(); openmp_m = c(); openmp_n = c(); openmp_t = c();
+for (i in sizes) {
+   for (j in nodes) {
+       ix=ix+1;
+       tempdata = mn_data[mn_data$imp=='openmp' & mn_data$m==i & mn_data$nodes==j,];
+       means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
+       colnames(means) = c("panels","times");
+      panelTimes = data.frame(unique(as.numeric(as.character(tempdata$b))),means$times);
+       colnames(panelTimes) = c("panels","times");
+       openmp_b[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$panels;
+       openmp_m[ix] = i;
+       openmp_n[ix] = j; #slight abuse of notation, here n is the node count =O
+       openmp_t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$times;
+   }
+}
+openmp_minPanels = data.frame(openmp_b,openmp_m,openmp_n,openmp_t);
+table_openmp_mn_panels = openmp_minPanels;
+
+# figure out best blocking for mkl and mkl implementations 
+# for each size and node count
+ix = 0;
+mkl_b = c(); mkl_m = c(); mkl_n = c(); mkl_t = c();
+for (i in sizes) {
+   for (j in nodes) {
+      ix=ix+1;
+      tempdata = mn_data[mn_data$imp=='mkl' & mn_data$m==i & mn_data$nodes==j,];
+      means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
+      colnames(means) = c("panels","times");
+      panelTimes = data.frame(unique(as.numeric(as.character(tempdata$b))),means$times);
+       colnames(panelTimes) = c("panels","times");
+      mkl_b[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$panels;
+      mkl_m[ix] = i;
+      mkl_n[ix] = j; #slight abuse of notation =O
+      mkl_t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$panels;
+
+   }
+}           
+mkl_minPanels = data.frame(mkl_b,mkl_m,mkl_n,mkl_t);
+table_mkl_mn_panels = mkl_minPanels;
+
+# plotting
+for (i in unique(mn_data$m)) {                # for each non-naive implementation
+#    tempdata = mn_data[mn_data$m==i,];
+    tempdata <- NULL;
+    tempname = paste("mn-",as.character(i),sep="");
+            
+    # find corresponding naive implementation for each node
+    for (j in unique(mn_data$nodes)) {
+     naive_panel = naive_minPanels[naive_minPanels$naive_m==i & 
+                                   naive_minPanels$naive_n==j,]$naive_b;
+     openmp_panel = openmp_minPanels[openmp_minPanels$openmp_m==i & 
+                                     openmp_minPanels$openmp_n==j,]$openmp_b;
+     mkl_panel = mkl_minPanels[mkl_minPanels$mkl_m==i & 
+                               mkl_minPanels$mkl_n==j,]$mkl_b;
+    
+    # get subset of data that all nodes work with
+     naivedata = mn_data[mn_data$imp=='naive' & mn_data$m==i & mn_data$b==naive_panel,];
+     openmpdata = mn_data[mn_data$imp=='openmp' & mn_data$m==i & mn_data$b==openmp_panel,];
+     mkldata = mn_data[mn_data$imp=='mkl' & mn_data$m==i & mn_data$b==mkl_panel,];
+
+    # within each data subset, try to find the minimum time for each node and 
+    # append it to tempdata
+     naive_sub = naivedata[naivedata$nodes==j,];
+     naive_min_node_j = naive_sub[naive_sub$tpt==min(naive_sub$tpt),];
+
+     openmp_sub = openmpdata[openmpdata$nodes==j,];
+     openmp_min_node_j = openmp_sub[openmp_sub$tpt==min(openmp_sub$tpt),];
+
+     mkl_sub = mkldata[mkldata$nodes==j,];
+     mkl_min_node_j = mkl_sub[mkl_sub$tpt==min(mkl_sub$tpt),];
+                    
+     tempdata = rbind(tempdata,naive_min_node_j,openmp_min_node_j,mkl_min_node_j);
+    }
+
+    # do the plotting
+    p <- ggplot(tempdata, aes(x=nodes, y=logtpt, group=imp));
+    p + geom_line(aes(colour=imp)) + opts(title=tempname);
+    ggsave(paste(results_folder,tempname,".pdf",sep=""),scale=1);
 }
 
 # clean up
@@ -152,4 +232,9 @@ for (i in unique(mn_data$m)) {
         print(tempdata[tempdata$tpt==min(tempdata$tpt),])
 }  
 
-# 2. 
+# 2. Print tables
+print(table_naive_ssn_panels)
+print(table_naive_mn_panels)
+print(table_openmp_mn_panels)
+print(table_mkl_mn_panels)
+ 
