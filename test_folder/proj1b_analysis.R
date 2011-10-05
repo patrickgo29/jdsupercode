@@ -45,9 +45,9 @@ mm_sn_data$tpt_mil = 1000*mm_sn_data$tpt;
 mn_data$tpt_mil = 1000*mn_data$tpt;
 
 # Transform time to log scale
-ssn_data$logtpt = log10(ssn_data$tpt_mil);
-mm_sn_data$logtpt = log10(mm_sn_data$tpt_mil);
-mn_data$logtpt = log10(mn_data$tpt_mil);
+ssn_data$logtpt = log2(ssn_data$tpt_mil);
+mm_sn_data$logtpt = log2(mm_sn_data$tpt_mil);
+mn_data$logtpt = log2(mn_data$tpt_mil);
 
 ###### PLOTS #######################################################
 # Note: by default, ggplot always clears the screen and uses the entire device
@@ -58,7 +58,7 @@ mn_data$logtpt = log10(mn_data$tpt_mil);
 # find best naive implementation from above for each panel size
 sizes = unique(ssn_data$m);
 ix = 0;
-b=c(); m=c(); t=c();
+b=c(); m=c(); t=c(); mean=c(); median=c();
 for (i in sizes) {
     ix=ix+1;
     tempdata = ssn_data[ssn_data$imp=='naive' & ssn_data$m==i,];
@@ -69,13 +69,15 @@ for (i in sizes) {
     b[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$panels;
     m[ix] = i;
     t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$times;
+    mean[ix] = mean(means$times);
+    median[ix] = median(means$times);
 }
-minPanels = data.frame(b,m,t);
+minPanels = data.frame(b,m,t,mean,median);
 table_min_naive_ssn_panels = minPanels;
 
 sizes = unique(ssn_data$m);
 ix = 0;
-b=c(); m=c(); t=c();
+b=c(); m=c(); t=c(); mean=c(); median=c();
 for (i in sizes) {
     ix=ix+1;
     tempdata = ssn_data[ssn_data$imp=='naive' & ssn_data$m==i,];
@@ -86,8 +88,10 @@ for (i in sizes) {
     b[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$panels;
     m[ix] = i;
     t[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$times;
+    mean[ix] = mean(means$times);
+    median[ix] = median(means$times);
 }
-maxPanels = data.frame(b,m,t);
+maxPanels = data.frame(b,m,t,mean,median);
 table_max_naive_ssn_panels = maxPanels;
 
 
@@ -113,7 +117,7 @@ for (i in unique(mm_sn_data$m)) {          # for each unique size,
          # plot and save to the specified savefolder and filename
          p <- ggplot(tempdata, aes(x=tpp, y=logtpt, group=imp));
          p + geom_line(aes(colour=imp)) + opts(title=tempname);
-         ggsave(paste(results_folder,tempname,".pdf",sep=""),scale=1);
+         ggsave(paste(results_folder,tempname,".png",sep=""),scale=1);
     }
 }
 
@@ -126,6 +130,7 @@ sizes = unique(mn_data$m);
 nodes = unique(mn_data$nodes);
 ix = 0;
 naive_b = c(); naive_m = c(); naive_n = c(); naive_t = c();
+naive_mean = c(); naive_median = c();
 for (i in sizes) {
     for (j in nodes) {
       ix=ix+1;
@@ -138,15 +143,18 @@ for (i in sizes) {
       naive_m[ix] = i;
       naive_n[ix] = j; #slight abuse of notation =O
       naive_t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$times;
+      naive_mean[ix] = mean(panelTimes$times);
+      naive_median[ix] = median(panelTimes$times);
     }
 }
-naive_minPanels = data.frame(naive_b,naive_m,naive_n,naive_t);
+naive_minPanels = data.frame(naive_b,naive_m,naive_n,naive_t,naive_mean,naive_median);
 table_min_naive_mn_panels = naive_minPanels;
 
 # figure out best blocking for openmp implementation 
 # for each size and node count
 ix = 0;
 openmp_b = c(); openmp_m = c(); openmp_n = c(); openmp_t = c();
+openmp_mean = c(); openmp_median = c();
 for (i in sizes) {
    for (j in nodes) {
        ix=ix+1;
@@ -159,15 +167,18 @@ for (i in sizes) {
        openmp_m[ix] = i;
        openmp_n[ix] = j; #slight abuse of notation, here n is the node count =O
        openmp_t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$times;
+       openmp_mean[ix] = mean(panelTimes$times);
+       openmp_median[ix] = median(panelTimes$times);
    }
 }
-openmp_minPanels = data.frame(openmp_b,openmp_m,openmp_n,openmp_t);
+openmp_minPanels = data.frame(openmp_b,openmp_m,openmp_n,openmp_t,openmp_mean,openmp_median);
 table_min_openmp_mn_panels = openmp_minPanels;
 
 # figure out best blocking for mkl implementations 
 # for each size and node count
 ix = 0;
 mkl_b = c(); mkl_m = c(); mkl_n = c(); mkl_t = c();
+mkl_mean = c(); mkl_median = c();
 for (i in sizes) {
    for (j in nodes) {
       ix=ix+1;
@@ -180,10 +191,11 @@ for (i in sizes) {
       mkl_m[ix] = i;
       mkl_n[ix] = j; #slight abuse of notation =O
       mkl_t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$times;
-
+      mkl_mean[ix] = mean(panelTimes$times);
+      mkl_median[ix] = median(panelTimes$times);
    }
 }           
-mkl_minPanels = data.frame(mkl_b,mkl_m,mkl_n,mkl_t);
+mkl_minPanels = data.frame(mkl_b,mkl_m,mkl_n,mkl_t,mkl_mean,mkl_median);
 table_min_mkl_mn_panels = mkl_minPanels;
 
 # DO THE SAME FOR MAX
@@ -191,6 +203,7 @@ sizes = unique(mn_data$m);
 nodes = unique(mn_data$nodes);
 ix = 0;
 naive_b = c(); naive_m = c(); naive_n = c(); naive_t = c();
+naive_mean = c(); naive_median = c();
 for (i in sizes) {
     for (j in nodes) {
       ix=ix+1;
@@ -203,13 +216,16 @@ for (i in sizes) {
       naive_m[ix] = i;
       naive_n[ix] = j; #slight abuse of notation =O
       naive_t[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$times;
+      naive_mean[ix] = mean(panelTimes$times);
+      naive_median[ix] = median(panelTimes$times);
     }
 }
-naive_maxPanels = data.frame(naive_b,naive_m,naive_n,naive_t);
+naive_maxPanels = data.frame(naive_b,naive_m,naive_n,naive_t,naive_mean,naive_median);
 table_max_naive_mn_panels = naive_maxPanels;
 
 ix = 0;
 openmp_b = c(); openmp_m = c(); openmp_n = c(); openmp_t = c();
+openmp_mean = c(); openmp_median = c()
 for (i in sizes) {
    for (j in nodes) {
        ix=ix+1;
@@ -222,12 +238,15 @@ for (i in sizes) {
        openmp_m[ix] = i;
        openmp_n[ix] = j; #slight abuse of notation, here n is the node count =O
        openmp_t[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$times;
+       openmp_mean[ix] = mean(panelTimes$times);
+       openmp_median[ix] = median(panelTimes$times);
    }
 }
-openmp_maxPanels = data.frame(openmp_b,openmp_m,openmp_n,openmp_t);
+openmp_maxPanels = data.frame(openmp_b,openmp_m,openmp_n,openmp_t,openmp_mean,openmp_median);
 table_max_openmp_mn_panels = openmp_maxPanels;
 
 ix = 0;
+mkl_mean = c(); mkl_median = c();
 mkl_b = c(); mkl_m = c(); mkl_n = c(); mkl_t = c();
 for (i in sizes) {
    for (j in nodes) {
@@ -241,9 +260,11 @@ for (i in sizes) {
       mkl_m[ix] = i;
       mkl_n[ix] = j; #slight abuse of notation =O
       mkl_t[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$times;
+      mkl_mean[ix] = mean(panelTimes$times);
+      mkl_median[ix] = median(panelTimes$times);
    }
 }           
-mkl_maxPanels = data.frame(mkl_b,mkl_m,mkl_n,mkl_t);
+mkl_maxPanels = data.frame(mkl_b,mkl_m,mkl_n,mkl_t,mkl_mean,mkl_median);
 table_max_mkl_mn_panels = mkl_maxPanels;
 
 # plotting
@@ -283,7 +304,7 @@ for (i in unique(mn_data$m)) {                # for each non-naive implementatio
     # do the plotting
     p <- ggplot(tempdata, aes(x=nodes, y=logtpt, group=imp));
     p + geom_line(aes(colour=imp)) + opts(title=tempname);
-    ggsave(paste(results_folder,tempname,".pdf",sep=""),scale=1);
+    ggsave(paste(results_folder,tempname,".png",sep=""),scale=1);
 }
 
 # clean up
