@@ -4,7 +4,8 @@ library('gridExtra')
 library('ggplot2')
 library('reshape2')
 
-setwd("/home/jack/Dropbox/source/cse6230/project1");
+#setwd("/home/jack/Dropbox/source/cse6230/project1");
+setwd("/nethome/jchua3/project1/");
 results_folder="Results2/";
 
 ###### DO DATA STUFF #############################
@@ -94,7 +95,10 @@ for (i in sizes) {
 maxPanels = data.frame(b,m,t,mean,median);
 table_max_naive_ssn_panels = maxPanels;
 
-
+table_min_openmp_mm_sn_panels = NULL;
+table_min_mkl_mm_sn_panels = NULL;
+table_max_openmp_mm_sn_panels = NULL;
+table_max_mkl_mm_sn_panels = NULL;
 for (i in unique(mm_sn_data$m)) {          # for each unique size,
     for (j in unique(mm_sn_data$nodes)) {    # and node count
          # get the subset of data we want
@@ -109,6 +113,19 @@ for (i in unique(mm_sn_data$m)) {          # for each unique size,
          naivedata[c("tpp")] = naivedata[c("ppn")];  #quick hack for plotting          
          tempdata = rbind(tempdata,naivedata);
 
+        # create print out tables for openmp and mkl
+         min_openmp = tempdata[tempdata$imp=='openmp',];
+         min_openmp = min_openmp[min_openmp$tpt==min(min_openmp$tpt),];
+         max_openmp = tempdata[tempdata$imp=='openmp',];
+         max_openmp = max_openmp[max_openmp$tpt==max(max_openmp$tpt),];
+         min_mkl    = tempdata[tempdata$imp=='mkl',];
+         min_mkl    = min_mkl[min_mkl$tpt==min(min_mkl$tpt),];
+         max_mkl = tempdata[tempdata$imp=='mkl',];
+         max_mkl = max_mkl[max_mkl$tpt==max(max_mkl$tpt),];
+         table_min_openmp_mm_sn_panels =rbind(table_min_openmp_mm_sn_panels,min_openmp);
+         table_min_mkl_mm_sn_panels    =rbind(table_min_mkl_mm_sn_panels,min_mkl);
+         table_max_openmp_mm_sn_panels =rbind(table_max_openmp_mm_sn_panels,max_openmp);
+         table_max_mkl_mm_sn_panels    =rbind(table_max_mkl_mm_sn_panels,max_mkl);
 
          # naming
          tempname = paste("mm_sn-",as.character(i),"-",as.character(j),
@@ -121,57 +138,103 @@ for (i in unique(mm_sn_data$m)) {          # for each unique size,
     }
 }
 
+# adjust the format of tables a bit, add means and medians
+table_min_openmp_mm_sn_panels$mean =aggregate(mm_sn_data$tpt[mm_sn_data$imp=='openmp'],
+                       by=list(mm_sn_data$m[mm_sn_data$imp=='openmp']),FUN=mean)[,2];
+table_max_openmp_mm_sn_panels$mean =aggregate(mm_sn_data$tpt[mm_sn_data$imp=='openmp'],
+                       by=list(mm_sn_data$m[mm_sn_data$imp=='openmp']),FUN=mean)[,2];
+table_min_mkl_mm_sn_panels$mean = aggregate(mm_sn_data$tpt[mm_sn_data$imp=='mkl'],
+                       by=list(mm_sn_data$m[mm_sn_data$imp=='mkl']),FUN=mean)[,2];
+table_max_mkl_mm_sn_panels$mean = aggregate(mm_sn_data$tpt[mm_sn_data$imp=='mkl'],
+                       by=list(mm_sn_data$m[mm_sn_data$imp=='mkl']),FUN=mean)[,2];
+
+table_min_openmp_mm_sn_panels$median=aggregate(mm_sn_data$tpt[mm_sn_data$imp=='openmp'],
+                       by=list(mm_sn_data$m[mm_sn_data$imp=='openmp']),FUN=median)[,2];
+table_max_openmp_mm_sn_panels$median=aggregate(mm_sn_data$tpt[mm_sn_data$imp=='openmp'],
+                       by=list(mm_sn_data$m[mm_sn_data$imp=='openmp']),FUN=median)[,2];
+table_min_mkl_mm_sn_panels$median=aggregate(mm_sn_data$tpt[mm_sn_data$imp=='mkl'],
+                       by=list(mm_sn_data$m[mm_sn_data$imp=='mkl']),FUN=median)[,2];
+table_max_mkl_mm_sn_panels$median=aggregate(mm_sn_data$tpt[mm_sn_data$imp=='mkl'],
+                       by=list(mm_sn_data$m[mm_sn_data$imp=='mkl']),FUN=median)[,2];
+
+table_min_openmp_mm_sn_panels = table_min_openmp_mm_sn_panels[c("m","tpt",
+                                                             "mean","median")];
+table_min_mkl_mm_sn_panels = table_min_mkl_mm_sn_panels[c("m","tpt","mean","median")];
+table_max_openmp_mm_sn_panels = table_max_openmp_mm_sn_panels[c("m","tpt",
+                                                            "mean","median")];
+table_max_mkl_mm_sn_panels = table_max_mkl_mm_sn_panels[c("m","tpt","mean","median")];
+
+
 # 3. plots for multiple nodes (MN) ****************************************
 # max 8 threads per node
 # only openMP/MKL uses threads
 
-# figure out best blocking for naive implementations for each size and node count
+# get unique values from size and node columns
 sizes = unique(mn_data$m);
 nodes = unique(mn_data$nodes);
+
+# figure out best blocking for naive implementations for each size and node count
 ix = 0;
 naive_b = c(); naive_m = c(); naive_n = c(); naive_t = c();
 naive_mean = c(); naive_median = c();
+naive_ppn = c(); naive_tpp = c(); naive_k=c();
 for (i in sizes) {
-    for (j in nodes) {
-      ix=ix+1;
-      tempdata = mn_data[mn_data$imp=='naive' & mn_data$m==i & mn_data$nodes==j,];
-      means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
-      colnames(means) = c("panels","times");
-      panelTimes = data.frame(unique(as.numeric(as.character(tempdata$b))),means$times);
-      colnames(panelTimes) = c("panels","times");
-      naive_b[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$panels;
-      naive_m[ix] = i;
-      naive_n[ix] = j; #slight abuse of notation =O
-      naive_t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$times;
-      naive_mean[ix] = mean(panelTimes$times);
-      naive_median[ix] = median(panelTimes$times);
-    }
+   for (j in nodes) {
+       ix=ix+1;
+       tempdata = mn_data[mn_data$imp=='naive' & mn_data$m==i & mn_data$nodes==j,];
+       #means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
+       mins = aggregate(tempdata$tpt,by=list(tempdata$b,tempdata$ppn,tempdata$tpp),FUN=min);
+       colnames(mins) = c("panels","ppn","tpp","times");
+      panelTimes = data.frame(as.numeric(as.character(mins$panels)),
+                              mins$ppn,    
+                              mins$tpp,
+                              mins$times);
+       colnames(panelTimes) = c("panels","ppn","tpp","times");
+       naive_b[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$panels[1];
+       naive_m[ix] = i;
+       naive_n[ix] = j; #slight abuse of notation, here n is the node count =O
+       naive_t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$times[1];
+       naive_mean[ix] = mean(panelTimes$times);
+       naive_median[ix] = median(panelTimes$times);
+       naive_k[ix] = tempdata[1,]$k;
+       naive_tpp[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$tpp[1];
+       naive_ppn[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$ppn[1];
+   }
 }
-naive_minPanels = data.frame(naive_b,naive_m,naive_n,naive_t,naive_mean,naive_median);
+naive_minPanels = data.frame(naive_n,naive_ppn,naive_tpp,naive_m,naive_m,naive_k,naive_b,naive_t,naive_mean,naive_median);
 table_min_naive_mn_panels = naive_minPanels;
+
 
 # figure out best blocking for openmp implementation 
 # for each size and node count
 ix = 0;
 openmp_b = c(); openmp_m = c(); openmp_n = c(); openmp_t = c();
 openmp_mean = c(); openmp_median = c();
+openmp_ppn = c(); openmp_tpp = c(); openmp_k=c();
 for (i in sizes) {
    for (j in nodes) {
        ix=ix+1;
        tempdata = mn_data[mn_data$imp=='openmp' & mn_data$m==i & mn_data$nodes==j,];
-       means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
-       colnames(means) = c("panels","times");
-      panelTimes = data.frame(unique(as.numeric(as.character(tempdata$b))),means$times);
-       colnames(panelTimes) = c("panels","times");
-       openmp_b[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$panels;
+       #means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
+       mins = aggregate(tempdata$tpt,by=list(tempdata$b,tempdata$ppn,tempdata$tpp),FUN=min);
+       colnames(mins) = c("panels","ppn","tpp","times");
+      panelTimes = data.frame(as.numeric(as.character(mins$panels)),
+                              mins$ppn,  
+                              mins$tpp,
+                              mins$times);
+       colnames(panelTimes) = c("panels","ppn","tpp","times");
+       openmp_b[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$panels[1];
        openmp_m[ix] = i;
        openmp_n[ix] = j; #slight abuse of notation, here n is the node count =O
-       openmp_t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$times;
+       openmp_t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$times[1];
        openmp_mean[ix] = mean(panelTimes$times);
        openmp_median[ix] = median(panelTimes$times);
+       openmp_k[ix] = tempdata[1,]$k;
+       openmp_tpp[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$tpp[1];
+       openmp_ppn[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$ppn[1];
    }
 }
-openmp_minPanels = data.frame(openmp_b,openmp_m,openmp_n,openmp_t,openmp_mean,openmp_median);
+openmp_minPanels = data.frame(openmp_n,openmp_ppn,openmp_tpp,openmp_m,openmp_m,openmp_k,openmp_b,openmp_t,openmp_mean,openmp_median);
 table_min_openmp_mn_panels = openmp_minPanels;
 
 # figure out best blocking for mkl implementations 
@@ -179,96 +242,129 @@ table_min_openmp_mn_panels = openmp_minPanels;
 ix = 0;
 mkl_b = c(); mkl_m = c(); mkl_n = c(); mkl_t = c();
 mkl_mean = c(); mkl_median = c();
+mkl_ppn = c(); mkl_tpp = c(); mkl_k=c();
 for (i in sizes) {
    for (j in nodes) {
-      ix=ix+1;
-      tempdata = mn_data[mn_data$imp=='mkl' & mn_data$m==i & mn_data$nodes==j,];
-      means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
-      colnames(means) = c("panels","times");
-      panelTimes = data.frame(unique(as.numeric(as.character(tempdata$b))),means$times);
-       colnames(panelTimes) = c("panels","times");
-      mkl_b[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$panels;
-      mkl_m[ix] = i;
-      mkl_n[ix] = j; #slight abuse of notation =O
-      mkl_t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$times;
-      mkl_mean[ix] = mean(panelTimes$times);
-      mkl_median[ix] = median(panelTimes$times);
+       ix=ix+1;
+       tempdata = mn_data[mn_data$imp=='mkl' & mn_data$m==i & mn_data$nodes==j,];
+       #means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
+       mins = aggregate(tempdata$tpt,by=list(tempdata$b,tempdata$ppn,tempdata$tpp),FUN=min);
+       colnames(mins) = c("panels","ppn","tpp","times");
+      panelTimes = data.frame(as.numeric(as.character(mins$panels)),
+                              mins$ppn,    
+                              mins$tpp,
+                              mins$times);
+       colnames(panelTimes) = c("panels","ppn","tpp","times");
+       mkl_b[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$panels[1];
+       mkl_m[ix] = i;
+       mkl_n[ix] = j; #slight abuse of notation, here n is the node count =O
+       mkl_t[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$times[1];
+       mkl_mean[ix] = mean(panelTimes$times);
+       mkl_median[ix] = median(panelTimes$times);
+       mkl_k[ix] = tempdata[1,]$k;
+       mkl_tpp[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$tpp[1];
+       mkl_ppn[ix] = panelTimes[panelTimes$times == min(panelTimes$times),]$ppn[1];
    }
-}           
-mkl_minPanels = data.frame(mkl_b,mkl_m,mkl_n,mkl_t,mkl_mean,mkl_median);
+}
+mkl_minPanels = data.frame(mkl_n,mkl_ppn,mkl_tpp,mkl_m,mkl_m,mkl_k,mkl_b,mkl_t,mkl_mean,mkl_median);
 table_min_mkl_mn_panels = mkl_minPanels;
 
+
 # DO THE SAME FOR MAX
-sizes = unique(mn_data$m);
-nodes = unique(mn_data$nodes);
+# figure out best blocking for naive implementation 
+# for each size and node count
 ix = 0;
 naive_b = c(); naive_m = c(); naive_n = c(); naive_t = c();
 naive_mean = c(); naive_median = c();
+naive_ppn = c(); naive_tpp = c(); naive_k=c();
 for (i in sizes) {
-    for (j in nodes) {
-      ix=ix+1;
-      tempdata = mn_data[mn_data$imp=='naive' & mn_data$m==i & mn_data$nodes==j,];
-      means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
-      colnames(means) = c("panels","times");
-      panelTimes = data.frame(unique(as.numeric(as.character(tempdata$b))),means$times);
-      colnames(panelTimes) = c("panels","times");
-      naive_b[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$panels;
-      naive_m[ix] = i;
-      naive_n[ix] = j; #slight abuse of notation =O
-      naive_t[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$times;
-      naive_mean[ix] = mean(panelTimes$times);
-      naive_median[ix] = median(panelTimes$times);
-    }
+   for (j in nodes) {
+       ix=ix+1;
+       tempdata = mn_data[mn_data$imp=='naive' & mn_data$m==i & mn_data$nodes==j,];
+       #means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
+       maxes = aggregate(tempdata$tpt,by=list(tempdata$b,tempdata$ppn,tempdata$tpp),FUN=max);
+       colnames(maxes) = c("panels","ppn","tpp","times");
+      panelTimes = data.frame(as.numeric(as.character(maxes$panels)),
+                              maxes$ppn,    
+                              maxes$tpp,
+                              maxes$times);
+       colnames(panelTimes) = c("panels","ppn","tpp","times");
+       naive_b[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$panels[1];
+       naive_m[ix] = i;
+       naive_n[ix] = j; #slight abuse of notation, here n is the node count =O
+       naive_t[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$times[1];
+       naive_mean[ix] = mean(panelTimes$times);
+       naive_median[ix] = median(panelTimes$times);
+       naive_k[ix] = tempdata[1,]$k;
+       naive_tpp[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$tpp[1];
+       naive_ppn[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$ppn[1];
+   }
 }
-naive_maxPanels = data.frame(naive_b,naive_m,naive_n,naive_t,naive_mean,naive_median);
+naive_maxPanels = data.frame(naive_n,naive_ppn,naive_tpp,naive_m,naive_m,naive_k,naive_b,naive_t,naive_mean,naive_median);
 table_max_naive_mn_panels = naive_maxPanels;
 
 ix = 0;
 openmp_b = c(); openmp_m = c(); openmp_n = c(); openmp_t = c();
-openmp_mean = c(); openmp_median = c()
+openmp_mean = c(); openmp_median = c();
+openmp_ppn = c(); openmp_tpp = c(); openmp_k=c();
 for (i in sizes) {
    for (j in nodes) {
        ix=ix+1;
        tempdata = mn_data[mn_data$imp=='openmp' & mn_data$m==i & mn_data$nodes==j,];
-       means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
-       colnames(means) = c("panels","times");
-      panelTimes = data.frame(unique(as.numeric(as.character(tempdata$b))),means$times);
-       colnames(panelTimes) = c("panels","times");
-       openmp_b[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$panels;
+       #means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
+       maxes = aggregate(tempdata$tpt,by=list(tempdata$b,tempdata$ppn,tempdata$tpp),FUN=max);
+       colnames(maxes) = c("panels","ppn","tpp","times");
+      panelTimes = data.frame(as.numeric(as.character(maxes$panels)),
+                              maxes$ppn,    
+                              maxes$tpp,
+                              maxes$times);
+       colnames(panelTimes) = c("panels","ppn","tpp","times");
+       openmp_b[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$panels[1];
        openmp_m[ix] = i;
        openmp_n[ix] = j; #slight abuse of notation, here n is the node count =O
-       openmp_t[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$times;
+       openmp_t[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$times[1];
        openmp_mean[ix] = mean(panelTimes$times);
        openmp_median[ix] = median(panelTimes$times);
+       openmp_k[ix] = tempdata[1,]$k;
+       openmp_tpp[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$tpp[1];
+       openmp_ppn[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$ppn[1];
    }
 }
-openmp_maxPanels = data.frame(openmp_b,openmp_m,openmp_n,openmp_t,openmp_mean,openmp_median);
+openmp_maxPanels = data.frame(openmp_n,openmp_ppn,openmp_tpp,openmp_m,openmp_m,openmp_k,openmp_b,openmp_t,openmp_mean,openmp_median);
 table_max_openmp_mn_panels = openmp_maxPanels;
 
 ix = 0;
-mkl_mean = c(); mkl_median = c();
 mkl_b = c(); mkl_m = c(); mkl_n = c(); mkl_t = c();
+mkl_mean = c(); mkl_median = c();
+mkl_ppn = c(); mkl_tpp = c(); mkl_k=c();
 for (i in sizes) {
    for (j in nodes) {
-      ix=ix+1;
-      tempdata = mn_data[mn_data$imp=='mkl' & mn_data$m==i & mn_data$nodes==j,];
-      means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
-      colnames(means) = c("panels","times");
-      panelTimes = data.frame(unique(as.numeric(as.character(tempdata$b))),means$times);
-       colnames(panelTimes) = c("panels","times");
-      mkl_b[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$panels;
-      mkl_m[ix] = i;
-      mkl_n[ix] = j; #slight abuse of notation =O
-      mkl_t[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$times;
-      mkl_mean[ix] = mean(panelTimes$times);
-      mkl_median[ix] = median(panelTimes$times);
+       ix=ix+1;
+       tempdata = mn_data[mn_data$imp=='mkl' & mn_data$m==i & mn_data$nodes==j,];
+       #means = aggregate(tempdata$tpt,by=list(tempdata$b),FUN=mean);
+       maxes = aggregate(tempdata$tpt,by=list(tempdata$b,tempdata$ppn,tempdata$tpp),FUN=max);
+       colnames(maxes) = c("panels","ppn","tpp","times");
+      panelTimes = data.frame(as.numeric(as.character(maxes$panels)),
+                              maxes$ppn,    
+                              maxes$tpp,
+                              maxes$times);
+       colnames(panelTimes) = c("panels","ppn","tpp","times");
+       mkl_b[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$panels[1];
+       mkl_m[ix] = i;
+       mkl_n[ix] = j; #slight abuse of notation, here n is the node count =O
+       mkl_t[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$times[1];
+       mkl_mean[ix] = mean(panelTimes$times);
+       mkl_median[ix] = median(panelTimes$times);
+       mkl_k[ix] = tempdata[1,]$k;
+       mkl_tpp[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$tpp[1];
+       mkl_ppn[ix] = panelTimes[panelTimes$times == max(panelTimes$times),]$ppn[1];
    }
-}           
-mkl_maxPanels = data.frame(mkl_b,mkl_m,mkl_n,mkl_t,mkl_mean,mkl_median);
+}
+mkl_maxPanels = data.frame(mkl_n,mkl_ppn,mkl_tpp,mkl_m,mkl_m,mkl_k,mkl_b,mkl_t,mkl_mean,mkl_median);
 table_max_mkl_mn_panels = mkl_maxPanels;
 
 # plotting
-for (i in unique(mn_data$m)) {                # for each non-naive implementation
+for (i in unique(mn_data$m)) {                # for each implementation
 #    tempdata = mn_data[mn_data$m==i,];
     tempdata <- NULL;
     tempname = paste("mn-",as.character(i),sep="");
@@ -327,11 +423,15 @@ for (i in unique(mn_data$m)) {
 }  
 
 # 2. Print tables
+print(table_min_naive_ssn_panels)
 print(table_max_naive_ssn_panels)
+print(table_min_openmp_mm_sn_panels)
+print(table_max_openmp_mm_sn_panels)
+print(table_min_mkl_mm_sn_panels)
+print(table_max_mkl_mm_sn_panels)
 print(table_min_naive_mn_panels)
 print(table_min_openmp_mn_panels)
 print(table_min_mkl_mn_panels)
-print(table_min_naive_ssn_panels)
 print(table_max_naive_mn_panels)
 print(table_max_openmp_mn_panels)
 print(table_max_mkl_mn_panels)
