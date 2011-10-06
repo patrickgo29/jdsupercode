@@ -244,6 +244,10 @@ int main(int argc, char *argv[]) {
   if (np != 16) {
     printf("Error: np=%d. Please use 16 processes\n", np);
   }
+  
+  if(rank == 0){
+    printf("\n");
+  }
 
   int type;
   for(type = 0; type <= 2; type++){
@@ -269,6 +273,8 @@ int main(int argc, char *argv[]) {
     exit_on_fail( random_matrix_test(128, 128, 128, 2, 8, 1, type));
     exit_on_fail( random_matrix_test(128, 128, 128, 1, 16, 1, type));
     exit_on_fail( random_matrix_test(128, 128, 128, 16, 1, 1, type));
+
+    printf("\n");
   }
 #ifdef DEBUG
   finalize: 

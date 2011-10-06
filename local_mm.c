@@ -142,9 +142,11 @@ void local_mms(mat_mul_specs * mms,
 			local_mm(mms->m, mms->n, mms->k, alpha, A, lda, B, ldb, beta, C, ldc);
 			break;
 		case OPENMP :
+			omp_set_num_threads(mms->threads);
 			local_mm_openmp(mms->m, mms->n, mms->k, alpha, A, lda, B, ldb, beta, C, ldc);
 			break;
 		case MKL :
+			omp_set_num_threads(mms->threads);
 			local_mm_mkl(mms->m, mms->n, mms->k, alpha, A, lda, B, ldb, beta, C, ldc);
 			break;
 		default :

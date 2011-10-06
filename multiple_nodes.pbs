@@ -1,6 +1,6 @@
 #PBS -q research
 #PBS -l nodes=8:sixcore
-#PBS -l walltime=5:59:59
+#PBS -l walltime=6:00:00
 #PBS -N multiple_nodes
 
 cd $PBS_O_WORKDIR
@@ -10,30 +10,30 @@ hostname
 echo $PWD
 cat $PBS_NODEFILE
 
-RESULTS=./Results
-OFILE=$RESULTS/multple_nodes.csv
+TRIALS=5
 
-TRIALS=25
-for SIZE in 384 768 1536 3072 6144 12288 24576
+RESULTS=./Results/Strong_Scaling
+OFILE=$RESULTS/multiple_nodes.csv
+for SIZE in 256 512 1024 2048 4096 8192 16384
 do
 	for NODES in 1 2 4 8
 	do
 		head -n $NODES $PBS_NODEFILE > NODEFILE
-		PPN=12
+		PPN=8
 		PROCS=$(($NODES * $PPN))
 		TPP=1
-		for B in 1 2 4
+		for B in 8 16 32 64 128 256 512 1024
 		do
 			date
 			echo -n "summa, ${NODES}, ${PPN}, ${TPP}, " >> $OFILE
 			mpirun --hostfile NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $SIZE -x $NODES -y $PPN -b $B --naive --trials $TRIALS >> $OFILE
 		done
 
-		for PPN in 1 2 4 6 12
+		for PPN in 1 2 4 8
 		do
 			PROCS=$(($NODES * $PPN))
-			TPP=$((12/$PPN))
-			for B in 1 2 4
+			TPP=$((8/$PPN))
+			for B in 8 16 32 64 128 256 512 1024
 			do
 				date
 				echo -n "summa, ${NODES}, ${PPN}, ${TPP}, " >> $OFILE
@@ -41,15 +41,59 @@ do
 			done
 		done
 	
-		for PPN in 1 2 4 6 12
+		for PPN in 1 2 4 8
 		do
 			PROCS=$(($NODES * $PPN))
-			TPP=$((12/$PPN))
-			for B in 1 2 4
+			TPP=$((8/$PPN))
+			for B in 8 16 32 64 128 256 512 1024
 			do
 				date
 				echo -n "summa, ${NODES}, ${PPN}, ${TPP}, " >> $OFILE
 				mpirun --hostfile NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $SIZE -x $NODES -y $PPN -b $B --mkl $TPP --trials $TRIALS >> $OFILE
+			done
+		done
+	done
+done
+
+RESULTS=./Results/Weak_Scaling
+OFILE=$RESULTS/multiple_nodes.csv
+for SIZE in 256 512 1024 2048 4096 8192 16384 
+do
+	for NODES in 1 2 4 8
+	do
+		KSIZE=$(($NODES * $SIZE))
+		head -n $NODES $PBS_NODEFILE > NODEFILE
+		PPN=8
+		PROCS=$(($NODES * $PPN))
+		TPP=1
+		for B in 16 32 64 128 256 512 1024
+		do
+			date
+			echo -n "summa, ${NODES}, ${PPN}, ${TPP}, " >> $OFILE
+			mpirun --hostfile NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $KSIZE -x $NODES -y $PPN -b $B --naive --trials $TRIALS >> $OFILE
+		done
+	
+		for PPN in 1 2 4 8
+		do
+			PROCS=$(($NODES * $PPN))
+			TPP=$((8/$PPN))
+			for B in 16 32 64 128 256 512 1024
+			do
+				date
+				echo -n "summa, ${NODES}, ${PPN}, ${TPP}, " >> $OFILE
+				mpirun --hostfile NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $KSIZE -x $NODES -y $PPN -b $B --openmp $TPP --trials $TRIALS >> $OFILE
+			done
+		done
+		
+		for PPN in 1 2 4 8
+		do
+			PROCS=$(($NODES * $PPN))
+			TPP=$((8/$PPN))
+			for B in 16 32 64 128 256 512 1024
+			do
+				date
+				echo -n "summa, ${NODES}, ${PPN}, ${TPP}, " >> $OFILE
+				mpirun --hostfile NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $KSIZE -x $NODES -y $PPN -b $B --mkl $TPP --trials $TRIALS >> $OFILE
 			done
 		done
 	done

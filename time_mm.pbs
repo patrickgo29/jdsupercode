@@ -14,17 +14,11 @@ echo $PWD
 cat $PBS_NODEFILE
 echo -e "\n\n"
 
-RESULTS=../Results
-OFILE=$RESULTS/single_node_scaling.csv
+echo "Running Naive"
+mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 -trials 25 --naive
+echo "Running OpenMP"
+mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 -trials 25 --openmp 1
+echo "Running MKL"
+mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 -trials 25 --mkl 1
 
-#mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 -trials 25 --naive
-
-for SIZE in 64 128 256 512 1024 2048 4096 8192 16384
-do
-	for THREADS in 1 2 4 6 8 10 12 14 16 18 20 22 24
-	do
-		mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 -trials 25 --openmp $THREADS >> 
-		mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 -trials 25 --mkl $THREADS >> $RESULTS/local_mm_single_node_mkl_strong_scaling.csv
-	done
-done
 # eof

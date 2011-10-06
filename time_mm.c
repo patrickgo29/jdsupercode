@@ -43,6 +43,12 @@ void random_multiply(mat_mul_specs * mms) {
   deallocate_matrix(B);
   deallocate_matrix(C);
 
+  if(mms->type == NAIVE)
+    printf("naive, ");
+  else if(mms->type == OPENMP)
+    printf("openmp, ");
+  else if(mms->type == MKL)
+    printf("mkl, ");
   printf("%d, %d, %d, %lf, %d, %lf\n", mms->m, mms->n, mms->k, t_elapsed, mms->trials, t_elapsed / mms->trials);
 }
 
