@@ -188,15 +188,15 @@ void lower_triangular_test(int n, int type) {
 
 int main() {
 
-  printf("Hello World\n");
+  printf("Hello World\n\n");
   int type;
   for(type = 0; type <= 2; type++){
 	if(type == NAIVE){
-		printf("testing the naive local_mm\n");
+		printf("Testing the naive local_mm\n");
 	}else if(type == OPENMP){
-		printf("testing the OpenMP local_mm\n");
+		printf("Testing the OpenMP local_mm\n");
 	}else if(type == MKL){
-		printf("testing the MKL local_mm\n");
+		printf("Testing the MKL local_mm\n");
 	}
   	identity_test(16, type);
   	identity_test(37, type);
@@ -206,6 +206,7 @@ int main() {
   	lower_triangular_test(8, type);
   	lower_triangular_test(92, type);
   	lower_triangular_test(128, type);
+	printf("\n");
   }
 
   return 0;

@@ -68,6 +68,12 @@ void random_summa(mat_mul_specs * mms) {
   deallocate_matrix(C_block);
 
   if (rank == 0) {
+    if(mms->type == NAIVE)
+      printf("naive, ");
+    else if(mms->type == OPENMP)
+      printf("openmp, ");
+    else if(mms->type == MKL)
+      printf("mkl, ");
     printf("%d, %d, %d, %d, %d, %d, %lf, %d, %lf\n", mms->m, mms->n, mms->k, mms->x, mms->y, mms->b, t_elapsed, mms->trials, t_elapsed / mms->trials);
   }
 }

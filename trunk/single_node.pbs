@@ -1,6 +1,6 @@
 #PBS -q class_long
 #PBS -l nodes=1:sixcore
-#PBS -l walltime=5:59:59
+#PBS -l walltime=1:00:00
 #PBS -N single_node
 
 cd $PBS_O_WORKDIR
@@ -10,34 +10,106 @@ hostname
 echo $PWD
 cat $PBS_NODEFILE
 
-RESULTS=./Results
+TRIALS=5
 
-TRIALS=25
-for SIZE in 384 768 1536 3072 6144 12288 24576
+#Strong Scaling Experiments
+RESULTS=./Results/Strong_Scaling
+for SIZE in 384 768 1536 3072
 do
 	OFILE=$RESULTS/mm_single_node.csv
-	for TPP in 1 2 3 4 6 8 12 16 24
+	for TPP in 1 2 4 8 12 16 24
 	do
-		echo date
+		date
 		echo -n "mm, 1, 1, ${TPP}, " >> $OFILE
 		mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m $SIZE -n $SIZE -k $SIZE --trials $TRIALS --openmp $TPP >> $OFILE
 	done
 
-	for TPP in 1 2 3 4 6 8 12 16 24
+	for TPP in 1 2 4 8 12 16 24
 	do
-		echo date
+		date
 		echo -n "mm, 1, 1, ${TPP}, " >> $OFILE
 		mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m $SIZE -n $SIZE -k $SIZE --trials $TRIALS --mkl $TPP >> $OFILE
 	done
 
 	OFILE=$RESULTS/summa_single_node.csv
-	for B in 1 2
+	for PPN in 1 2 4 8 12 16 24
 	do
-		for PPN in 1 2 3 4 6 8 12 16 24
+		for B in 1 2 4 6 8 12 16 24 32 48 64 96 128
 		do
-			echo date
+			date
 			echo -n "summa, 1, ${PPN}, 1, " >> $OFILE
 			mpirun --hostfile $PBS_NODEFILE -np $PPN ./time_summa -m $SIZE -n $SIZE -k $SIZE -x $PPN -y 1 -b $B --trials $TRIALS --naive >> $OFILE
+		done
+	done
+done
+
+#Weak Scaling Experiments
+RESULTS=./Results/Weak_Scaling
+for SIZE in 384 768 1536 3072
+do
+	OFILE=$RESULTS/mm_single_node.csv
+	for TPP in 1 2 3 4 6 8 12
+	do
+		KSIZE=$(($SIZE * TPP))
+		date
+		echo -n "mm, 1, 1, ${TPP}, " >> $OFILE
+		mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m $SIZE -n $SIZE -k $KSIZE --trials $TRIALS --openmp $TPP >> $OFILE
+	done
+
+	for TPP in 1 2 3 4 6 8 12
+	do
+		KSIZE=$(($SIZE * TPP))
+		date
+		echo -n "mm, 1, 1, ${TPP}, " >> $OFILE
+		mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m $SIZE -n $SIZE -k $KSIZE --trials $TRIALS --mkl $TPP >> $OFILE
+	done
+
+	OFILE=$RESULTS/summa_single_node.csv
+	for PPN in 1 2 3 4 6 8 12
+	do
+		KSIZE=$(($SIZE * PPN))
+		for B in 8 12 16 24
+		do
+			date
+			echo -n "summa, 1, ${PPN}, 1, " >> $OFILE
+			mpirun --hostfile $PBS_NODEFILE -np $PPN ./time_summa -m $SIZE -n $SIZE -k $KSIZE -x $PPN -y 1 -b $B --trials $TRIALS --naive >> $OFILE
+		done
+	done
+done
+
+#Odd Size Experiments
+RESULTS=./Results/Odd_Sizes
+for MSIZE in 256 512 1024 2048
+do
+	for NSIZE in 256 512 1024 2048
+	do
+		for KSIZE in 256 512 1024 2048
+		do
+			OFILE=$RESULTS/mm_single_node.csv
+			for TPP in 1 2 4 8
+			do
+				date
+				echo -n "mm, 1, 1, ${TPP}, " >> $OFILE
+				mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m $MSIZE -n $NSIZE -k $KSIZE --trials $TRIALS --openmp $TPP >> $OFILE
+			done
+
+			for TPP in 1 2 4 8
+			do
+				date
+				echo -n "mm, 1, 1, ${TPP}, " >> $OFILE
+				mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m $MSIZE -n $NSIZE -k $KSIZE --trials $TRIALS --mkl $TPP >> $OFILE
+			done
+	
+			OFILE=$RESULTS/summa_single_node.csv
+			for PPN in 1 2 4 8
+			do
+				for B in 8 16 32
+				do
+					date
+					echo -n "summa, 1, ${PPN}, 1, " >> $OFILE
+					mpirun --hostfile $PBS_NODEFILE -np $PPN ./time_summa -m $MSIZE -n $NSIZE -k $KSIZE -x $PPN -y 1 -b $B --trials $TRIALS --naive >> $OFILE
+				done
+			done
 		done
 	done
 done
