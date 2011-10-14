@@ -1,3 +1,6 @@
+// David S. Noble, Jr.
+// Matrix Multiply
+
 #ifndef __COMM_ARGS_H__
 #define __COMM_ARGS_H__
 

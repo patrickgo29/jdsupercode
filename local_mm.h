@@ -1,3 +1,6 @@
+// David S. Noble, Jr.
+// Matrix Multiply
+
 #ifndef __LOCAL_MM_H__
 #define __LOCAL_MM_H__
 

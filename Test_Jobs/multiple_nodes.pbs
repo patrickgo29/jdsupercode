@@ -3,6 +3,10 @@
 #PBS -l walltime=6:00:00
 #PBS -N multiple_nodes
 
+# David S. Noble, Jr.
+# CSE 6230
+# Project 1
+
 cd $PBS_O_WORKDIR
 
 date
@@ -12,8 +16,8 @@ cat $PBS_NODEFILE
 
 TRIALS=5
 
-RESULTS=./Results/Strong_Scaling
-OFILE=$RESULTS/multiple_nodes.csv
+RESULTS=./Results/Strong_Scaling/
+OFILES=$RESULTS/MN
 for SIZE in 256 512 1024 2048 4096 8192 16384
 do
 	for NODES in 1 2 4 8
@@ -22,10 +26,10 @@ do
 		PPN=8
 		PROCS=$(($NODES * $PPN))
 		TPP=1
+		OFILE=${OFILES}_NAIVE_${NODES}_${PPN}_${TPP}.csv
 		for B in 8 16 32 64 128 256 512 1024
 		do
 			date
-			echo -n "summa, ${NODES}, ${PPN}, ${TPP}, " >> $OFILE
 			mpirun --hostfile NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $SIZE -x $NODES -y $PPN -b $B --naive --trials $TRIALS >> $OFILE
 		done
 
@@ -33,10 +37,10 @@ do
 		do
 			PROCS=$(($NODES * $PPN))
 			TPP=$((8/$PPN))
+			OFILE=${OFILES}_OPENMP_${NODES}_${PPN}_${TPP}.csv
 			for B in 8 16 32 64 128 256 512 1024
 			do
 				date
-				echo -n "summa, ${NODES}, ${PPN}, ${TPP}, " >> $OFILE
 				mpirun --hostfile NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $SIZE -x $NODES -y $PPN -b $B --openmp $TPP --trials $TRIALS >> $OFILE
 			done
 		done
@@ -45,10 +49,10 @@ do
 		do
 			PROCS=$(($NODES * $PPN))
 			TPP=$((8/$PPN))
+			OFILE=${OFILES}_MKL_${NODES}_${PPN}_${TPP}.csv
 			for B in 8 16 32 64 128 256 512 1024
 			do
 				date
-				echo -n "summa, ${NODES}, ${PPN}, ${TPP}, " >> $OFILE
 				mpirun --hostfile NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $SIZE -x $NODES -y $PPN -b $B --mkl $TPP --trials $TRIALS >> $OFILE
 			done
 		done
@@ -56,7 +60,7 @@ do
 done
 
 RESULTS=./Results/Weak_Scaling
-OFILE=$RESULTS/multiple_nodes.csv
+OFILES=$RESULTS/MN
 for SIZE in 256 512 1024 2048 4096 8192 16384 
 do
 	for NODES in 1 2 4 8
@@ -66,10 +70,10 @@ do
 		PPN=8
 		PROCS=$(($NODES * $PPN))
 		TPP=1
+		OFILE=${OFILES}_NAIVE_${NODES}_${PPN}_${TPP}.csv
 		for B in 16 32 64 128 256 512 1024
 		do
 			date
-			echo -n "summa, ${NODES}, ${PPN}, ${TPP}, " >> $OFILE
 			mpirun --hostfile NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $KSIZE -x $NODES -y $PPN -b $B --naive --trials $TRIALS >> $OFILE
 		done
 	
@@ -77,10 +81,10 @@ do
 		do
 			PROCS=$(($NODES * $PPN))
 			TPP=$((8/$PPN))
+			OFILE=${OFILES}_OPENMP_${NODES}_${PPN}_${TPP}.csv
 			for B in 16 32 64 128 256 512 1024
 			do
 				date
-				echo -n "summa, ${NODES}, ${PPN}, ${TPP}, " >> $OFILE
 				mpirun --hostfile NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $KSIZE -x $NODES -y $PPN -b $B --openmp $TPP --trials $TRIALS >> $OFILE
 			done
 		done
@@ -89,10 +93,10 @@ do
 		do
 			PROCS=$(($NODES * $PPN))
 			TPP=$((8/$PPN))
+			OFILE=${OFILES}_MKL_${NODES}_${PPN}_${TPP}.csv
 			for B in 16 32 64 128 256 512 1024
 			do
 				date
-				echo -n "summa, ${NODES}, ${PPN}, ${TPP}, " >> $OFILE
 				mpirun --hostfile NODEFILE -np $PROCS ./time_summa -m $SIZE -n $SIZE -k $KSIZE -x $NODES -y $PPN -b $B --mkl $TPP --trials $TRIALS >> $OFILE
 			done
 		done
