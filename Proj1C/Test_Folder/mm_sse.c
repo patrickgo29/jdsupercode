@@ -31,6 +31,7 @@ void mm_sse_reg(double *a, double *b, double *c)
 // compute A*B where each line has 64 floats
 void mm_sse_l1(double *a, double *b, double *r)
 {
+
 }
 
 // L2 cache blocking
@@ -38,6 +39,7 @@ void mm_sse_l1(double *a, double *b, double *r)
 // => pb = 128
 void mm_sse_l2(double *a, double *b, double *r)
 {
+
 }
 
 int main()
