@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <smmintrin.h>
 #define REG_LINE 2
-#define L1_LINE 64
+#define L1_LINE 32
+#define L2_LINE 64
 
 // register kernel - compute A*B=C where A, B, C are 2x2
 void mm_sse_reg(double *a, double *b, double *c)
