@@ -149,11 +149,13 @@ find_stats <- function(data,group,fun,other) {
         mediantpt = ddply(data,group,function(df)median(df$tpt));
         val = merge(val,mediantpt,by=group);
     }
+    
+    colnames(val) = c(group,"tpt",other);
+    
     # sort dataframe
-    val = val[with(val, order(group)),]
+    #val = val[order(group),]
 
     # rename cols, return
-    colnames(val) = c(group,"tpt",other);
     return(val)
 }
 
@@ -163,6 +165,7 @@ find_stats <- function(data,group,fun,other) {
 #
 # INPUTS: df1, ..., dfn - n dataframes you want to write to a file
 #         filename - name of file to write to
+# OUTPUTS: none, but there will be a new CSV file with the dataframe(s) 
 dfsToCSV <- function(...,filename) {
     dfs <- list(...)
 
@@ -182,9 +185,20 @@ dfsToCSV <- function(...,filename) {
 # variable. we use the same naming convention as last time
 #
 # INPUTS: df - dataframe
-#         group - vector of var strings to group plots by
+#         x  - independent var 
+#         y  - dependent var 
+#         group - group var string
+#         title - title string of plot
 #         xaxis - var string to plot on x axis
 #         yaxis - var string to plot on y axis
-plotgroup <- function(df,group,xaxis,yaxis) {
+#         filename - string to determine where to save plot
+# OUTPUT: plot object
+#plot_wrap <- function(df,x,y,group,title,xaxis,yaxis,filename) {
+#    p <- ggplot(df, aes(x, y, group));
     
-}
+    # configure the geometry and display the plot
+#    p+geom_line(aes(colour=group))+opts(title=title)+scale_x_continuous(xaxis)+scale_y_continuous(yaxis);
+    
+    # save to file
+#    ggsave(filename,scale=1);
+#}
