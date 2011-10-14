@@ -1,8 +1,5 @@
-/**
- *  \file time_summa.c
- *  \brief code for timing summa()
- *  \author Kent Czechowski <kentcz@gatech...>
- */
+// David S. Noble, Jr.
+// Matrix Multiply
 
 #include <assert.h>
 #include <stdlib.h>
@@ -13,6 +10,28 @@
 #include "local_mm.h"
 #include "summa.h"
 #include "comm_args.h"
+
+void random_summa(mat_mul_specs * mms);
+
+int main(int argc, char *argv[]) {
+
+  mat_mul_specs * mms = getMatMulSpecs(argc, argv);
+
+  int rank = 0;
+  int np = 0;
+  char hostname[MPI_MAX_PROCESSOR_NAME + 1];
+  int namelen = 0;
+
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &np);
+  MPI_Get_processor_name(hostname, &namelen);
+  
+  random_summa(mms);
+
+  MPI_Finalize();
+  return 0;
+}
 
 void random_summa(mat_mul_specs * mms) {
   int m, n, k, px, py, pb, iterations;
@@ -28,16 +47,8 @@ void random_summa(mat_mul_specs * mms) {
   int rank = 0;
   double *A_block, *B_block, *C_block;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank); /* Get process id */
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  //if (rank == 0) {
-  //  printf(
-  //      "random_matrix_test m=%d n=%d k=%d px=%d py=%d pb=%d iterations=%d.....",
-  //      m, n, k, px, py, pb, iterations);
-
-  //}
-
-  /*  Initialize matrix blocks */
   A_block = random_matrix(m / px, k / py);
   assert(A_block);
 
@@ -49,19 +60,13 @@ void random_summa(mat_mul_specs * mms) {
 
   MPI_Barrier( MPI_COMM_WORLD);
 
-  /* 
-   *
-   * Call SUMMA
-   *
-   */
-
-  t_start = MPI_Wtime(); /* Start timer */
+  t_start = MPI_Wtime();
   for (iter = 0; iter < iterations; iter++) {
     summa_mms(mms, A_block, B_block, C_block);
-  } /* iter */
+  }
 
   MPI_Barrier(MPI_COMM_WORLD);
-  t_elapsed = MPI_Wtime() - t_start; /* Stop timer */
+  t_elapsed = MPI_Wtime() - t_start;
 
   deallocate_matrix(A_block);
   deallocate_matrix(B_block);
@@ -74,28 +79,8 @@ void random_summa(mat_mul_specs * mms) {
       printf("openmp, ");
     else if(mms->type == MKL)
       printf("mkl, ");
-    printf("%d, %d, %d, %d, %d, %d, %lf, %d, %lf\n", mms->m, mms->n, mms->k, mms->x, mms->y, mms->b, t_elapsed, mms->trials, t_elapsed / mms->trials);
+    printf("%d, %d, %d, %d, %d, %d, %lf, %d, %lf\n", mms->m, mms->n, \
+		mms->k, mms->x, mms->y, mms->b, t_elapsed, mms->trials, \
+		t_elapsed / mms->trials);
   }
-}
-
-/** Program start */
-int main(int argc, char *argv[]) {
-
-  mat_mul_specs * mms = getMatMulSpecs(argc, argv);
-
-  int rank = 0;
-  int np = 0;
-  char hostname[MPI_MAX_PROCESSOR_NAME + 1];
-  int namelen = 0;
-
-  MPI_Init(&argc, &argv); /* starts MPI */
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank); /* Get process id */
-  MPI_Comm_size(MPI_COMM_WORLD, &np); /* Get number of processes */
-  MPI_Get_processor_name(hostname, &namelen); /* Get hostname of node */
-  //printf("Using Host:%s -- Rank %d out of %d\n", hostname, rank, np);
-
-  random_summa(mms);
-
-  MPI_Finalize();
-  return 0;
 }

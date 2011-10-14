@@ -1,8 +1,5 @@
-/**
- *  \file time_mm.c
- *  \brief code for timing local_mm()
- *  \author Kent Czechowski <kentcz@gatech...>
- */
+// David S. Noble, Jr.
+// Matrix Multiply
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,30 +12,52 @@
 #include "local_mm.h"
 #include "comm_args.h"
 
-/**
- * Test the multiplication of two matrices of all ones
- **/
+//Test the multiplication of two matrices of all ones
+void random_multiply(mat_mul_specs * mms);
+
+int main(int argc, char *argv[]) {
+
+  mat_mul_specs * mms = getMatMulSpecs(argc, argv);
+
+  int rank = 0;
+  int np = 0;
+  char hostname[MPI_MAX_PROCESSOR_NAME + 1];
+  int namelen = 0;
+
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &np);
+  MPI_Get_processor_name(hostname, &namelen);
+
+  if (rank == 0) {
+    random_multiply(mms);
+  }
+
+  MPI_Finalize();
+  return 0;
+}
+
 void random_multiply(mat_mul_specs * mms) {
   double *A, *B, *C;
   double t_start, t_elapsed;
 
-  /* Allocate matrices */
+  //Allocate matrices
   A = random_matrix(mms->m, mms->k);
   B = random_matrix(mms->k, mms->n);
   C = random_matrix(mms->m, mms->n);
 
-  t_start = MPI_Wtime(); /* Start timer */
+  t_start = MPI_Wtime();
 
-  /* perform several Matric Mulitplies back-to-back */
+  //perform several Matric Mulitplies back-to-back
   int iter;
   for (iter = 0; iter < mms->trials; iter++) {
-    /* C = (1.0/k)*(A*B) + 0.0*C */
+    //C = (1.0/k)*(A*B) + 0.0*C
     local_mms(mms, 1.0, A, mms->m, B, mms->k, 1.0, C, mms->m);
-  } /* iter */
+  }
 
-  t_elapsed = MPI_Wtime() - t_start; /* Stop timer */
+  t_elapsed = MPI_Wtime() - t_start;
 
-  /* deallocate memory */
+  //deallocate memory
   deallocate_matrix(A);
   deallocate_matrix(B);
   deallocate_matrix(C);
@@ -50,27 +69,4 @@ void random_multiply(mat_mul_specs * mms) {
   else if(mms->type == MKL)
     printf("mkl, ");
   printf("%d, %d, %d, %lf, %d, %lf\n", mms->m, mms->n, mms->k, t_elapsed, mms->trials, t_elapsed / mms->trials);
-}
-
-int main(int argc, char *argv[]) {
-
-  mat_mul_specs * mms = getMatMulSpecs(argc, argv);
-
-  int rank = 0;
-  int np = 0;
-  char hostname[MPI_MAX_PROCESSOR_NAME + 1];
-  int namelen = 0;
-
-  MPI_Init(&argc, &argv); /* starts MPI */
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank); /* Get process id */
-  MPI_Comm_size(MPI_COMM_WORLD, &np); /* Get number of processes */
-  MPI_Get_processor_name(hostname, &namelen); /* Get hostname of node */
-  //printf("[Using Host:%s -- Rank %d out of %d]\n", hostname, rank, np);
-
-  if (rank == 0) {
-    random_multiply(mms);
-  }
-
-  MPI_Finalize();
-  return 0;
 }
