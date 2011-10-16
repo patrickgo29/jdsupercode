@@ -8,6 +8,7 @@
 #include <omp.h>
 
 #include "local_mm.h"
+#include "mem_functions.h"
 
 void local_mm(const int m, const int n, const int k,
 	const double alpha,
@@ -95,7 +96,6 @@ void local_mm_openmp_cbl_outer(const int m, const int n, const int k,
 	for (int b_k = 0; b_k < k; b_k += bk) {
 		for (int b_i = 0; b_i < m; b_i += bm) {
 			for (int b_j = 0; b_j < n; b_j += bn){
-//////////////////////////////////////////////////////////////////////
 				for (int col = b_j; col < n && col < b_j + bn; col++) {
 					for (int row = b_i; row < m && row < b_i + bm; row++) {
 						double dotprod = 0.0;
@@ -112,7 +112,6 @@ void local_mm_openmp_cbl_outer(const int m, const int n, const int k,
 						}
 					}
 				}
-//////////////////////////////////////////////////////////////////////
 			}
 		}
 	}
