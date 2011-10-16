@@ -34,16 +34,6 @@ do
 		date
 		mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m $SIZE -n $SIZE -k $SIZE --trials $TRIALS --mkl $TPP >> $OFILE
 	done
-
-	OFILE=${OFILES}_SUMMA_NAIVE.csv
-	for PPN in 1 2 4 8 12 16 24
-	do
-		for B in 1 2 4 6 8 12 16 24 32 48 64 96 128
-		do
-			date
-			mpirun --hostfile $PBS_NODEFILE -np $PPN ./time_summa -m $SIZE -n $SIZE -k $SIZE -x $PPN -y 1 -b $B --trials $TRIALS --naive >> $OFILE
-		done
-	done
 done
 
 #Weak Scaling Experiments
@@ -65,17 +55,6 @@ do
 		KSIZE=$(($SIZE * TPP))
 		date
 		mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m $SIZE -n $SIZE -k $KSIZE --trials $TRIALS --mkl $TPP >> $OFILE
-	done
-
-	OFILE=${OFILES}_SUMMA_NAIVE.csv
-	for PPN in 1 2 3 4 6 8 12
-	do
-		KSIZE=$(($SIZE * PPN))
-		for B in 8 12 16 24
-		do
-			date
-			mpirun --hostfile $PBS_NODEFILE -np $PPN ./time_summa -m $SIZE -n $SIZE -k $KSIZE -x $PPN -y 1 -b $B --trials $TRIALS --naive >> $OFILE
-		done
 	done
 done
 
@@ -100,16 +79,6 @@ do
 			do
 				date
 				mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m $MSIZE -n $NSIZE -k $KSIZE --trials $TRIALS --mkl $TPP >> $OFILE
-			done
-	
-			OFILE=${OFILES}_SUMMA_NAIVE.csv
-			for PPN in 1 2 4 8
-			do
-				for B in 8 16 32
-				do
-					date
-					mpirun --hostfile $PBS_NODEFILE -np $PPN ./time_summa -m $MSIZE -n $NSIZE -k $KSIZE -x $PPN -y 1 -b $B --trials $TRIALS --naive >> $OFILE
-				done
 			done
 		done
 	done

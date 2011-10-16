@@ -67,6 +67,6 @@ void random_multiply(mat_mul_specs * mms) {
   else if(mms->type == OPENMP)
     printf("openmp, ");
   else if(mms->type == MKL)
-    printf("mkl, ");
-  printf("%d, %d, %d, %lf, %d, %lf\n", mms->m, mms->n, mms->k, t_elapsed, mms->trials, t_elapsed / mms->trials);
+    printf("mkl, ", mms->threads);
+  printf("%d, %d, %d, %d, %d, %d, %d, %lf\n", mms->threads, mms->l1, mms->l2, mms->l3, mms->m, mms->n, mms->k, t_elapsed / mms->trials);
 }
