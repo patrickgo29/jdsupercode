@@ -16,9 +16,9 @@ mat_mul_specs * getMatMulSpecs(int argc, char **argv){
 		{"cbl", 0, 0, 0},
 		{"cop", 0, 0, 0},
 		{"trials", 1, 0, 0},
-		{"l1", 1, 0, 0},
-		{"l2", 1, 0, 0},
-		{"l3", 1, 0, 0},
+		{"bm", 1, 0, 0},
+		{"bn", 1, 0, 0},
+		{"bk", 1, 0, 0},
         	{NULL, 0, NULL, 0}
 	};
 
@@ -27,7 +27,7 @@ mat_mul_specs * getMatMulSpecs(int argc, char **argv){
 	mms->type = 0; mms->threads = 1;
 	mms->cbl = 0; mms->cop = 0;
 	mms->trials = 0;
-	mms->l1 = 0; mms->l2 = 0; mms->l3 = 0;
+	mms->bm = 0; mms->bn = 0; mms->bk = 0;
 	mms->m = 0; mms->n = 0; mms->k = 0;
 
 	int c, option_index = 0, type_set = 0, trials_set = 0, abort_b= 0;
@@ -66,13 +66,13 @@ mat_mul_specs * getMatMulSpecs(int argc, char **argv){
 						mms->trials = atoi(optarg);
 						break;
 					case 6:
-						mms->l1 = atoi(optarg);
+						mms->bm = atoi(optarg);
 						break;
 					case 7:
-						mms->l2 = atoi(optarg);
+						mms->bn = atoi(optarg);
 						break;
 					case 8:
-						mms->l3 = atoi(optarg);
+						mms->bk = atoi(optarg);
 						break;
 					default:
 						//should never get here...
@@ -107,14 +107,14 @@ mat_mul_specs * getMatMulSpecs(int argc, char **argv){
 
 	if(mms->cbl){
 		if(mms->type == 1){
-			if(mms->l1 == 0 || mms->l2 == 0 || mms->l3 == 0){
+			if(mms->bm == 0 || mms->bn == 0 || mms->bk == 0){
 				printf("to use cache blocking(--cbl), arguments");
-				if(mms->l1 == 0)
-					printf(" '--l1'");
-				if(mms->l2 == 0)
-					printf(" '--l2'");
-				if(mms->l3 == 0)
-					printf(" '--l3'");
+				if(mms->bm == 0)
+					printf(" '--bm'");
+				if(mms->bn == 0)
+					printf(" '--bn'");
+				if(mms->bk == 0)
+					printf(" '--bk'");
 				printf(" must be passed with a value greater than 0\n");
 				abort_b= 1;
 			}

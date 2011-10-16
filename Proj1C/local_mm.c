@@ -74,13 +74,13 @@ void local_mm_openmp(const int m, const int n, const int k,
 	}
 }
 
-void local_mm_openmp_cbl_outer(const int m, const int n, const int k,
+void local_mm_openmp_cbl(const int m, const int n, const int k,
 	const double alpha,
 	const double *A, const int lda,
 	const double *B, const int ldb,
 	const double beta,
 	double *C, const int ldc,
-	int l1, int l2, int l3)
+	int bm, int bn, int bk)
 {
 
 	//Verify the sizes of lda, ldb, and ldc
@@ -88,27 +88,26 @@ void local_mm_openmp_cbl_outer(const int m, const int n, const int k,
 	assert(ldb >= k);
 	assert(ldc >= m);
 
-	l3 = l3 / omp_get_num_threads();
-	int bk = k / (k * m / l3);
-	int bm = bk / (bk * m / l2);
-	int bn = n / (bk * n / l1);
 	#pragma omp parallel for
 	for (int b_k = 0; b_k < k; b_k += bk) {
 		for (int b_i = 0; b_i < m; b_i += bm) {
+			//prefetch_Ablock(A, b_k, b_i, m, bm, bk);
 			for (int b_j = 0; b_j < n; b_j += bn){
-				for (int col = b_j; col < n && col < b_j + bn; col++) {
-					for (int row = b_i; row < m && row < b_i + bm; row++) {
+				//prefetch_Bblock(B, b_j, b_k, k, bk, bn);
+				//prefetch_Cblock(C, b_j, b_i, m, bm, bn);
+				for (int col = b_j; col < b_j + bn && col < n; col++) {
+					for (int row = b_i; row < b_i + bm && row < m; row++) {
 						double dotprod = 0.0;
-						for (int k_iter = 0; k_iter < k; k_iter++) {
+						for (int k_iter = b_k; k_iter < b_k + bk; k_iter++) {
 							int a_index = (k_iter * lda) + row; 
 							int b_index = (col * ldb) + k_iter;
 							dotprod += A[a_index] * B[b_index]; 
 						}
 						int c_index = (col * ldc) + row;
-						if(b_k == 0){
-							C[c_index] = (alpha * dotprod) + (beta * C[c_index]);
-						}else{
+						if(b_k != 0){
 							C[c_index] += (alpha * dotprod);
+						}else{
+							C[c_index] = (alpha * dotprod) + (beta * C[c_index]);
 						}
 					}
 				}
@@ -123,14 +122,9 @@ void local_mm_openmp_cbl_cop(const int m, const int n, const int k,
 	const double *B, const int ldb,
 	const double beta,
 	double *C, const int ldc,
-	int l1, int l2, int l3)
+	int bm, int bn, int bk)
 {
-
-	//Verify the sizes of lda, ladb, and ldc
-	assert(lda >= m);
-	assert(ldb >= k);
-	assert(ldc >= m);
-
+	local_mm_openmp_cbl(m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, bm, bn, bk);
 }
 
 void local_mm_mkl(const int m, const int n, const int k,
@@ -157,7 +151,7 @@ void local_mm_mms(const int m, const int n, const int k,
 	const double *A, const int lda,
 	const double *B, const int ldb,
 	const double beta, 
-	double *C, const int ldc
+	double *C, const int ldc,
 	mat_mul_specs * mms)
 {
 	switch(mms->type){
@@ -169,17 +163,9 @@ void local_mm_mms(const int m, const int n, const int k,
 			if(!mms->cbl){
 				local_mm_openmp(m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
 			}else if(!mms->cop){
-				if(mms->inner){
-					local_mm_openmp_cbl_inner(m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, mms->l1, mms->l2, mms->l3);
-				}else{
-					local_mm_openmp_cbl_outer(m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, mms->l1, mms->l2, mms->l3);
-				}
+				local_mm_openmp_cbl(m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, mms->bm, mms->bn, mms->bk);
 			}else{
-				if(mms->inner){
-					local_mm_openmp_cbl_cop_inner(m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, mms->l1, mms->l2, mms->l3);
-				}else{
-					local_mm_openmp_cbl_cop_outer(m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, mms->l1, mms->l2, mms->l3);
-				}
+				local_mm_openmp_cbl_cop(m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, mms->bm, mms->bn, mms->bk);
 			}
 			break;
 		case MKL :

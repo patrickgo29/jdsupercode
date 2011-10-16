@@ -17,7 +17,7 @@ LINK_OPENMP_GCC = -fopenmp
 LINK_MKL_GCC = -L/opt/intel/Compiler/11.1/059/mkl/lib/em64t/ \
                -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -liomp5 -lpthread
 
-CC = gcc
+CC = mpicc
 CFLAGS = -std=c99 -O -Wall -Wextra -lm $(LINK_MKL_GCC) $(LINK_OPENMP_GCC)
 
 matrix_utils.o : matrix_utils.c matrix_utils.h
