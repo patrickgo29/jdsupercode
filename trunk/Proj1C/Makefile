@@ -23,22 +23,25 @@ CFLAGS = -std=c99 -O -Wall -Wextra -lm $(LINK_MKL_GCC) $(LINK_OPENMP_GCC)
 matrix_utils.o : matrix_utils.c matrix_utils.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-local_mm.o : local_mm.c local_mm.h
+local_mm.o : local_mm.c local_mm.h mem_functions.h
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+mem_functions.o : mem_functions.c mem_functions.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 comm_args.o : comm_args.c comm_args.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-unittest_mm.o : unittest_mm.c matrix_utils.h local_mm.h
+unittest_mm.o : unittest_mm.c matrix_utils.h local_mm.h mem_functions.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-unittest_mm : unittest_mm.o matrix_utils.o local_mm.o
+unittest_mm : unittest_mm.o matrix_utils.o local_mm.o mem_functions.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-time_mm.o : time_mm.c matrix_utils.h local_mm.h comm_args.h
+time_mm.o : time_mm.c matrix_utils.h local_mm.h comm_args.h mem_functions.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-time_mm : time_mm.o matrix_utils.o local_mm.o comm_args.o
+time_mm : time_mm.o matrix_utils.o local_mm.o comm_args.o mem_functions.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 .PHONY : clean
