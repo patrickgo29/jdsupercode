@@ -10,9 +10,9 @@ typedef struct mat_mul_specs_struct{
 	int cop;
 	int threads;
 	int trials;
-	int l1;
-	int l2;
-	int l3;
+	int bm;
+	int bn;
+	int bk;
 	int m;
 	int n;
 	int k;

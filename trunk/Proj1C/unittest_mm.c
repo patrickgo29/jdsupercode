@@ -11,7 +11,7 @@
 #include "local_mm.h"
 
 //Verify that a matrix times the identity is itself
-void identity_test(int n, int type) {
+void identity_test(int n, mat_mul_specs * mms) {
 	double *A, *B, *C;
 
 	printf("identity_test n=%d............", n);
@@ -22,13 +22,13 @@ void identity_test(int n, int type) {
 	C = zeros_matrix(n, n);
 
 	//C = 1.0*(A*B) + 0.0*C
-	local_mm_typed(n, n, n, 1.0, A, n, B, n, 5.0, C, n, type);
+	local_mm_mms(n, n, n, 1.0, A, n, B, n, 5.0, C, n, mms);
 
 	//Verfiy the results
 	verify_matrix(n, n, A, C);
 
 	//Backwards C = 1.0*(B*A) + 0.0*C
-	local_mm_typed(n, n, n, 1.0, B, n, A, n, 0.0, C, n, type);
+	local_mm_mms(n, n, n, 1.0, B, n, A, n, 0.0, C, n, mms);
 
 	//Verfiy the results
 	verify_matrix(n, n, A, C);
@@ -42,7 +42,7 @@ void identity_test(int n, int type) {
 }
 
 //Test the multiplication of two matrices of all ones
-void ones_test(int m, int n, int k, int type) {
+void ones_test(int m, int n, int k, mat_mul_specs * mms) {
 	double *A, *B, *C, *C_ones, *C_zeros;
 
 	printf("ones_test m=%d n=%d k=%d............", m, n, k);
@@ -56,13 +56,13 @@ void ones_test(int m, int n, int k, int type) {
 	C_zeros = zeros_matrix(m, n);
 
 	//C = (1.0/k)*(A*B) + 0.0*C
-	local_mm_typed(m, n, k, (1.0 / k), A, m, B, k, 0.0, C, m, type);
+	local_mm_mms(m, n, k, (1.0 / k), A, m, B, k, 0.0, C, m, mms);
 
 	//Verfiy the results
 	verify_matrix(m, n, C, C_ones);
 
 	//C = (1.0/k)*(A*B) + -1.0*C
-	local_mm_typed(m, n, k, (1.0 / k), A, m, B, k, -1.0, C, m, type);
+	local_mm_mms(m, n, k, (1.0 / k), A, m, B, k, -1.0, C, m, mms);
 
 	//Verfiy the results
 	verify_matrix(m, n, C, C_zeros);
@@ -79,7 +79,7 @@ void ones_test(int m, int n, int k, int type) {
 }
 
 //Test the multiplication of a lower triangular matrix
-void lower_triangular_test(int n, int type) {
+void lower_triangular_test(int n, mat_mul_specs * mms) {
 
 	int i;
 	double *A, *B, *C;
@@ -92,7 +92,7 @@ void lower_triangular_test(int n, int type) {
 	C = ones_matrix(n, 1);
 
 	//C = 1.0*(A*B) + 0.0*C
-	local_mm_typed(n, 1, n, 1.0, A, n, B, n, 0.0, C, n, type);
+	local_mm_mms(n, 1, n, 1.0, A, n, B, n, 0.0, C, n, mms);
 
 	//Loops over every element in C
 	//The elements of C should be [1 2 3 4...]
@@ -100,7 +100,7 @@ void lower_triangular_test(int n, int type) {
 		assert(C[i] == (double) (i + 1.0));
 
 	//C = 0.0*(A*B) + 1.0*C
-	local_mm_typed(n, 1, n, 0.0, A, n, B, n, 1.0, C, n, type);
+	local_mm_mms(n, 1, n, 0.0, A, n, B, n, 1.0, C, n, mms);
 
 	//Loops over every element in C
 	//The elements of C should be [1 2 3 4...]
@@ -108,7 +108,7 @@ void lower_triangular_test(int n, int type) {
 		assert(C[i] == (double) (i + 1.0));
 
 	//C = 1.0*(A*B) + 1.0*C
-	local_mm_typed(n, 1, n, 3.0, A, n, B, n, 1.0, C, n, type);
+	local_mm_mms(n, 1, n, 3.0, A, n, B, n, 1.0, C, n, mms);
 
 	//Loops over every element in C
 	//The elements of C should be [4 8 16 32...]
@@ -116,7 +116,7 @@ void lower_triangular_test(int n, int type) {
 		assert(C[i] == (double) ((i + 1) * 4.0));
 
 	//C = 0.0*(A*B) + 0.0*C
-	local_mm_typed(n, 1, n, 0.0, A, n, B, n, 0.0, C, n, type);
+	local_mm_mms(n, 1, n, 0.0, A, n, B, n, 0.0, C, n, mms);
 
 	//Loops over every element in C
 	//The elements of C should be 0
@@ -132,28 +132,57 @@ void lower_triangular_test(int n, int type) {
 }
 
 int main() {
+	mat_mul_specs mms;
 	int type;
-	for(type = 0; type <= 2; type++){
+	for(type = 0; type <= 3; type++){
 		switch(type)
 		{
-			case NAIVE:
+			case 0:
 				printf("Testing the naive local_mm\n");
+				mms.type = NAIVE;
 				break;
-			case OPENMP:
+			case 1:
 				printf("Testing the OpenMP local_mm\n");
+				mms.type = OPENMP;
+				mms.cbl = 0;
+				mms.cop = 0;
+				mms.threads = 12;
 				break;
-			case MKL:
+			case 2:
 				printf("Testing the MKL local_mm\n");
+				mms.type = MKL;
+				mms.threads = 12;
 				break;
+			case 3:
+				printf("Testing the OpenMP cache blocking local_mm\n");
+				mms.type = OPENMP;
+				mms.cbl = 1;
+				mms.cop = 0;
+				mms.threads = 12;
+				mms.bm = 2;
+				mms.bn = 2;
+				mms.bk = 2;
+				break;
+			case 4:
+				printf("Testing the OpenMP cache blocking and copy optimization local_mm\n");
+				mms.type = OPENMP;
+				mms.cbl = 1;
+				mms.cop = 2;
+				mms.threads = 12;
+				mms.bm = 2;
+				mms.bn = 2;
+				mms.bk = 2;
+				break;
+	
 		}
-		identity_test(16, type);
-		identity_test(37, type);
-		identity_test(512, type);
-		ones_test(32, 32, 32, type);
-		ones_test(61, 128, 123, type);
-		lower_triangular_test(8, type);
-		lower_triangular_test(92, type);
-		lower_triangular_test(128, type);
+		identity_test(16, &mms);
+		identity_test(37, &mms);
+		identity_test(512, &mms);
+		ones_test(32, 32, 32, &mms);
+		ones_test(61, 128, 123, &mms);
+		lower_triangular_test(8, &mms);
+		lower_triangular_test(92, &mms);
+		lower_triangular_test(128, &mms);
 		printf("\n");
 	}
 
