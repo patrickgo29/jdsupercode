@@ -18,7 +18,7 @@ LINK_MKL_GCC = -L/opt/intel/Compiler/11.1/059/mkl/lib/em64t/ \
                -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -liomp5 -lpthread
 
 CC = mpicc
-CFLAGS = -std=c99 -O3 -Wall -Wextra -lm $(LINK_MKL_GCC) $(LINK_OPENMP_GCC)
+CFLAGS = -std=c99 -O -Wall -Wextra -lm $(LINK_MKL_GCC) $(LINK_OPENMP_GCC)
 
 matrix_utils.o : matrix_utils.c matrix_utils.h
 	$(CC) $(CFLAGS) -o $@ -c $<
@@ -57,16 +57,21 @@ clean-pbs :
 	@if [ -f unittest_mm.o* ]; then mv -f unittest_mm.o* ./Archive/; fi;
 	@if [ -f time_mm.e* ]; then mv -f time_mm.e* ./Archive/; fi;
 	@if [ -f time_mm.o* ]; then mv -f time_mm.o* ./Archive/; fi;
-	@if [ -f single_node.e* ]; then mv -f single_node.e* ./Archive/; fi;
-	@if [ -f single_node.o* ]; then mv -f single_node.o* ./Archive/; fi;
+	@if [ -f find_opt_blocking.e* ]; then mv -f find_opt_blocking.e* ./Archive/; fi;
+	@if [ -f find_opt_blocking.o* ]; then mv -f find_opt_blocking.o* ./Archive/; fi;
+	@if [ -f scaling_exps.e* ]; then mv -f scaling_exps.e* ./Archive/; fi;
+	@if [ -f scaling_exps.o* ]; then mv -f scaling_exps.o* ./Archive/; fi;
 
 run--unittest_mm : unittest_mm clean-pbs
-	qsub ./Test_Jobs/unittest_mm.pbs
+	qsub6 ./Test_Jobs/unittest_mm.pbs
 
 run--time_mm : time_mm clean-pbs
-	qsub ./Test_Jobs/time_mm.pbs
+	qsub6 ./Test_Jobs/time_mm.pbs
 
-run--single_node : time_mm time_summa clean-pbs
-	qsub ./Test_Jobs/single_node.pbs
+run--find_opt_blocking : time_mm clean-pbs
+	qsub6 ./Test_Jobs/find_opt_blocking.pbs
+
+run--scaling_exps : time_mm clean-pbs
+	qsub6 ./Test_Jobs/scaling_exps.pbs
 
 # eof
