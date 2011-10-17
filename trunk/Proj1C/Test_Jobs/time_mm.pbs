@@ -1,16 +1,10 @@
-#PBS -q research
-#PBS -l nodes=1:sixcore
-#PBS -l walltime=01:00:00
+#PBS -q class
+#PBS -l nodes=1
+#PBS -l walltime=00:20:00
 #PBS -N time_mm
-
-# David S. Noble, Jr.
-# CSE 6230
-# Project 1
 
 export OMPI_MCA_mpi_yield_when_idle=0
 cd $PBS_O_WORKDIR
-
-RESULTS=../Results
 
 date
 hostname
@@ -19,10 +13,14 @@ cat $PBS_NODEFILE
 echo -e "\n\n"
 
 echo "Running Naive"
-mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 -trials 25 --naive
-echo "Running OpenMP"
-mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 -trials 25 --openmp 1
+./time_mm --naive -m 512 -n 512 -k 512 --trials 5
 echo "Running MKL"
-mpirun --hostfile $PBS_NODEFILE -np 1 ./time_mm -m 512 -n 512 -k 512 -trials 25 --mkl 1
+./time_mm --mkl 1-m 512 -n 512 -k 512 --trials 5
+echo "Running OpenMP"
+./time_mm --openmp 1 -m 512 -n 512 -k 512 --trials 5
+echo "Running OpenMP with cache blocking"
+./time_mm --openmp 1 --cbl --bm 32 --bn 32 --bk 32 -m 512 -n 512 -k 512 --trials 5
+echo "Running OpenMP with cache blocking and copy optimization"
+./time_mm --openmp 1 --cbl --cop --bm 32 --bn 32 --bk 32 -m 512 -n 512 -k 512 --trials 5
 
 # eof
