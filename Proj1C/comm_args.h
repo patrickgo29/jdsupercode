@@ -6,9 +6,9 @@
 
 typedef struct mat_mul_specs_struct{
 	int type;
+	int threads;
 	int cbl;
 	int cop;
-	int threads;
 	int trials;
 	int bm;
 	int bn;

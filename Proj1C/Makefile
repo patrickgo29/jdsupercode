@@ -18,7 +18,7 @@ LINK_MKL_GCC = -L/opt/intel/Compiler/11.1/059/mkl/lib/em64t/ \
                -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -liomp5 -lpthread
 
 CC = mpicc
-CFLAGS = -std=c99 -O -Wall -Wextra -lm $(LINK_MKL_GCC) $(LINK_OPENMP_GCC)
+CFLAGS = -std=c99 -O3 -Wall -Wextra -lm $(LINK_MKL_GCC) $(LINK_OPENMP_GCC)
 
 matrix_utils.o : matrix_utils.c matrix_utils.h
 	$(CC) $(CFLAGS) -o $@ -c $<
@@ -48,7 +48,7 @@ time_mm : time_mm.o matrix_utils.o local_mm.o comm_args.o mem_functions.o
 .PHONY : clean-pbs
 	
 clean : clean-pbs
-	rm -f unittest_mm unittest_summa time_mm time_summa            
+	rm -f unittest_mm time_mm            
 	rm -f *.o
 
 clean-pbs : 

@@ -11,8 +11,8 @@ mat_mul_specs * getMatMulSpecs(int argc, char **argv){
 
 	static struct option long_options[] = {
         	{"naive", 0, 0, 0},
-        	{"openmp", 2, 0, 0},
-        	{"mkl", 2, 0, 0},
+        	{"openmp", 1, 0, 0},
+        	{"mkl", 1, 0, 0},
 		{"cbl", 0, 0, 0},
 		{"cop", 0, 0, 0},
 		{"trials", 1, 0, 0},
@@ -64,6 +64,7 @@ mat_mul_specs * getMatMulSpecs(int argc, char **argv){
 						break;
 					case 5:
 						mms->trials = atoi(optarg);
+						trials_set = 1;
 						break;
 					case 6:
 						mms->bm = atoi(optarg);
