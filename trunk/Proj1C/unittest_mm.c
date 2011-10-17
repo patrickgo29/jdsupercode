@@ -134,7 +134,7 @@ void lower_triangular_test(int n, mat_mul_specs * mms) {
 int main() {
 	mat_mul_specs mms;
 	int type;
-	for(type = 0; type <= 3; type++){
+	for(type = 0; type <= 4; type++){
 		switch(type)
 		{
 			case 0:
@@ -146,32 +146,27 @@ int main() {
 				mms.type = OPENMP;
 				mms.cbl = 0;
 				mms.cop = 0;
-				mms.threads = 12;
+				mms.threads = 8;
 				break;
 			case 2:
 				printf("Testing the MKL local_mm\n");
 				mms.type = MKL;
-				mms.threads = 12;
+				mms.threads = 8;
 				break;
 			case 3:
 				printf("Testing the OpenMP cache blocking local_mm\n");
 				mms.type = OPENMP;
 				mms.cbl = 1;
 				mms.cop = 0;
-				mms.threads = 12;
-				mms.bm = 2;
-				mms.bn = 2;
-				mms.bk = 2;
+				mms.threads = 8;
+				mms.bm = 8;
+				mms.bn = 8;
+				mms.bk = 8;
 				break;
 			case 4:
 				printf("Testing the OpenMP cache blocking and copy optimization local_mm\n");
 				mms.type = OPENMP;
-				mms.cbl = 1;
-				mms.cop = 2;
-				mms.threads = 12;
-				mms.bm = 2;
-				mms.bn = 2;
-				mms.bk = 2;
+				mms.cop = 1;
 				break;
 	
 		}

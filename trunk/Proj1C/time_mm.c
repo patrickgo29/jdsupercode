@@ -52,7 +52,7 @@ void random_multiply(mat_mul_specs * mms) {
   int iter;
   for (iter = 0; iter < mms->trials; iter++) {
     //C = (1.0/k)*(A*B) + 0.0*C
-    local_mms(mms, 1.0, A, mms->m, B, mms->k, 1.0, C, mms->m);
+    local_mm_mms(mms->m, mms->n, mms->k, 1.0, A, mms->m, B, mms->k, 1.0, C, mms->m, mms);
   }
 
   t_elapsed = MPI_Wtime() - t_start;
@@ -67,6 +67,6 @@ void random_multiply(mat_mul_specs * mms) {
   else if(mms->type == OPENMP)
     printf("openmp, ");
   else if(mms->type == MKL)
-    printf("mkl, ", mms->threads);
-  printf("%d, %d, %d, %d, %d, %d, %d, %lf\n", mms->threads, mms->l1, mms->l2, mms->l3, mms->m, mms->n, mms->k, t_elapsed / mms->trials);
+    printf("mkl, ");
+  printf("%d, %d, %d, %d, %d, %d, %d, %d, %d, %lf\n", mms->threads, mms->cbl, mms->cop, mms->bm, mms->bn, mms->bk, mms->m, mms->n, mms->k, t_elapsed / mms->trials);
 }

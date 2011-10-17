@@ -88,27 +88,26 @@ void local_mm_openmp_cbl(const int m, const int n, const int k,
 	assert(ldb >= k);
 	assert(ldc >= m);
 
-	#pragma omp parallel for
 	for (int b_k = 0; b_k < k; b_k += bk) {
+		#pragma omp parallel for
 		for (int b_i = 0; b_i < m; b_i += bm) {
-			//prefetch_Ablock(A, b_k, b_i, m, bm, bk);
+			prefetch_Ablock(A, b_k, b_i, m, n, k, bm, bn, bk);
 			for (int b_j = 0; b_j < n; b_j += bn){
-				//prefetch_Bblock(B, b_j, b_k, k, bk, bn);
-				//prefetch_Cblock(C, b_j, b_i, m, bm, bn);
+				prefetch_Bblock(B, b_j, b_k, m, n, k, bm, bn, bk);
+				prefetch_Cblock(C, b_j, b_i, m, n, k, bm, bn, bk);	
 				for (int col = b_j; col < b_j + bn && col < n; col++) {
 					for (int row = b_i; row < b_i + bm && row < m; row++) {
 						double dotprod = 0.0;
-						for (int k_iter = b_k; k_iter < b_k + bk; k_iter++) {
+						for (int k_iter = b_k; k_iter < b_k + bk && k_iter < k; k_iter++) {
 							int a_index = (k_iter * lda) + row; 
 							int b_index = (col * ldb) + k_iter;
 							dotprod += A[a_index] * B[b_index]; 
 						}
 						int c_index = (col * ldc) + row;
-						if(b_k != 0){
+						if(b_k != 0)
 							C[c_index] += (alpha * dotprod);
-						}else{
+						else
 							C[c_index] = (alpha * dotprod) + (beta * C[c_index]);
-						}
 					}
 				}
 			}
@@ -124,7 +123,46 @@ void local_mm_openmp_cbl_cop(const int m, const int n, const int k,
 	double *C, const int ldc,
 	int bm, int bn, int bk)
 {
-	local_mm_openmp_cbl(m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, bm, bn, bk);
+	
+	//Verify the sizes of lda, ldb, and ldc
+	assert(lda >= m);
+	assert(ldb >= k);
+	assert(ldc >= m);
+
+	#pragma omp parallel
+	{
+		double * Abuffer = (double *)malloc(bm * bk * sizeof(double));
+		double * Bbuffer = (double *)malloc(bk * n * sizeof(double));
+		double * Cbuffer = (double *)malloc(bm * bn * sizeof(double));
+		for (int b_k = 0; b_k < k; b_k += bk) {
+			load_Bbuffer(B, Bbuffer, 0, b_k, m, n, k, bm, bn, bk);
+			#pragma omp for
+			for (int b_i = 0; b_i < m; b_i += bm) {
+				load_Abuffer(A, Abuffer, b_k, b_i, m, n, k, bm, bn, bk);
+				for (int b_j = 0; b_j < n; b_j += bn){
+					for (int col = b_j; col < b_j + bn && col < n; col++) {
+						for (int row = b_i; row < b_i + bm && row < m; row++) {
+							double dotprod = 0.0;
+							for (int k_iter = b_k; k_iter < b_k + bk && k_iter < k; k_iter++) {
+								//int a_index = (k_iter * lda) + row; 
+								int a_index = ((k_iter - b_k) * bm) + (row - b_i);
+								//int b_index = (col * ldb) + k_iter;
+								int b_index = (col * bk) + (k_iter - b_k);
+								//dotprod += A[a_index] * B[b_index]; 
+								dotprod += Abuffer[a_index] * Bbuffer[b_index];
+							}
+							int c_index = (col * ldc) + row;
+							if(b_k != 0)
+								C[c_index] += (alpha * dotprod);
+							else
+								C[c_index] = (alpha * dotprod) + (beta * C[c_index]);
+						}
+					}
+					
+				}
+			}
+		}
+	}
 }
 
 void local_mm_mkl(const int m, const int n, const int k,
