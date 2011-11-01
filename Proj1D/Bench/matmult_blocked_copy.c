@@ -29,13 +29,8 @@
 
 #define MIN(a, b) (a < b) ? a : b
 
-/* SSE double precision matrix multiply routine
- * Uses block size of 4 (the most that can fit on 16 registers)
- *
- */
-
 void 
-basic_dgemm (const int lda, const int M, const int N, const int K, const double *A, const double *B, double *C)
+basic_dgemm_back (const int lda, const int M, const int N, const int K, const double *A, const double *B, double *C)
 {
     int i,j,k;
     int rs = REGISTER_SIZE;
@@ -97,6 +92,42 @@ basic_dgemm (const int lda, const int M, const int N, const int K, const double 
     }
 }
 
+
+/* basic_dgemm matrix multiply routine. should work for more general matrix sizes
+ * requires for dimensions of A,B,C to be a multiple of 4
+ *
+ * differences from above - got rid of scalar multiplication
+ * does not use blocking, but rather line size - only uses 5 registers now
+ * TODO: implement larger line size with more registers
+ *
+ */
+
+void basic_dgemm (const int lda, const int M, const int N, const int K, const double *A, const double *B, double *C)
+{
+    int i,j,k;
+    __m128d A1,A2,B1,C1,C2;
+    int rs = REGISTER_SIZE;
+
+    for (i=0; i<M; i+=rs) {
+        for (j=0; j<N; j++) {
+            A1 = _mm_load_pd(A+i);
+            A2 = _mm_load_pd(A+i+2);
+            B1 = _mm_set1_pd(B[j]);
+            C1 = _mm_mul_pd(A1,B1);
+            C2 = _mm_mul_pd(A2,B1);
+            for (k=1; k<K; k++) {
+                A1 = _mm_load_pd(A+i+k*lda);
+                A2 = _mm_load_pd(A+i+k*lda+2);
+                B1 = _mm_set1_pd(B[j+k*lda]);
+                C1 = _mm_add_pd(_mm_mul_pd(A1,B1),C1);
+                C2 = _mm_add_pd(_mm_mul_pd(A2,B1),C2);
+            }
+            _mm_store_pd(&C[i+j*lda],C1);
+            _mm_store_pd(&C[i+j*lda+2],C2);
+        }
+    }
+}
+
 void 
 dgemm_copy(const int lda, const int M, const int N, const int K, const double *A, const double *B, double *C)
 {
@@ -119,9 +150,9 @@ dgemm_copy(const int lda, const int M, const int N, const int K, const double *A
   // align to 128 bytes, since that is the size of the block that
   // basic_dgemm can do
   copysize = pad*pad*sizeof(double);
-  posix_memalign((void**)&A_copy,16,copysize);
-  posix_memalign((void**)&B_copy,16,copysize);
-  posix_memalign((void**)&C_copy,16,copysize);
+  posix_memalign((void**)&A_copy,128,copysize);
+  posix_memalign((void**)&B_copy,128,copysize);
+  posix_memalign((void**)&C_copy,128,copysize);
 
   /* Copy matrix A */ 
   for (i=0; i<M; i++) {
