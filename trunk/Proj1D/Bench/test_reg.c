@@ -5,26 +5,32 @@
    
 #define REGISTER_SIZE 4
 
-void test_sse (int lda, float *A, float *B, float *C)
+
+void test_sse (double *A, double *B, double *C)
 {
 
   int i,j;
-   __m128d A1,A2,B1,B2,C1,C2,C3,C4;
-  for (i=0; i<16; i+=4)
+   __m128d A1,A2,B1,C1,C2,C3,C4;
+  for (i=0; i<16; i+=4) //needs to be 4
   {
       A1 = _mm_load_pd(A);
       A2 = _mm_load_pd(A+2);
+      B1 = _mm_set1_pd(B[i]);
 
-      b_line = _mm_set1_ps(b[i]);
-      r_line = _mm_mul_ps(a_line,b_line);
+      C1 = _mm_mul_pd(A1,B1);
+      C2 = _mm_mul_pd(A2,B1);
       for (j=1; j<4; j++) {
-          a_line = _mm_load_ps(&a[j*4]);
-          b_line = _mm_set1_ps(b[i+j]);
-          r_line = _mm_add_ps(_mm_mul_ps(a_line,b_line),r_line);
+          A1 = _mm_load_pd(&A[j*4]);
+          A2 = _mm_load_pd(&A[j*4]+2);
+          B1 = _mm_set1_pd(B[i+j]);
+          C1 = _mm_add_pd(_mm_mul_pd(A1,B1),C1);
+          C2 = _mm_add_pd(_mm_mul_pd(A2,B1),C2);
       }
-      _mm_store_ps(&r[i],r_line);
+      _mm_store_pd(&C[i],C1);
+      _mm_store_pd(&C[i+2],C2);
   } 
 }
+
 
 void 
 basic_dgemm (const int lda, const int M, const int N, const int K, double *A, double *B, double *C)
@@ -104,8 +110,8 @@ int main()
     int i;
     size_t copysize = sizeof(double)*8*8;
     size_t rbsize = sizeof(float)*16;
-//    double *A, *B, *C;
-    float *A, *B, *C;
+    double *A, *B, *C;
+//    float *A, *B, *C;
     
 //    A = (double *)malloc(copysize);
 //    B = (double *)malloc(copysize);
