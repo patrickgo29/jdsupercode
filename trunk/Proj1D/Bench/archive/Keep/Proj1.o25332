@@ -1,0 +1,29 @@
+Adding user jchua3 to group authjobs
+Sun Oct 30 12:10:15 EDT 2011
+jinx10
+/nethome/jchua3/jdsupercode/Proj1D/Bench
+
+
+
+
+
+**Validating matmult**
+	Validating n=256.....fail
+	Validating n=262.....fail
+	Validating n=512.....fail
+	Validating n=1024.....fail
+	Validating n=2040.....fail
+	Validating n=2040.....fail
+
+
+**Timing matmult**
+	n=2040: 5.537386 gflops/s
+	n=2048: 5.328239 gflops/s
+
+	n=2040: 5.537337 gflops/s
+	n=2048: 5.328586 gflops/s
+
+
+
+Average Performance: 5.432887 gflops/s
+Removing user jchua3 from group authjobs

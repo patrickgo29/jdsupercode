@@ -1,0 +1,2 @@
+Timer: clock_gettime: POSIX high-resolution timer
+Timer resolution: 1e-09

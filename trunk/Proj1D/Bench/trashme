@@ -1,0 +1,94 @@
+void square_dgemm( int lda, double *A, double *B, double *C )
+{
+    /*For each block combination*/
+    double * cacheB = new double[BLOCK_SIZE*BLOCK_SIZE];
+    double * temp;
+
+    /* padding */
+    int ldapad = lda;
+    double* Cpad;
+    int cCopied = 0;
+    if (lda % REGISTER_SIZE)
+    {
+        ldapad = lda + REGISTER_SIZE - lda % REGISTER_SIZE;
+        cCopied = 1;
+        Cpad = (double*) memalign(128, ldapad*ldapad*sizeof(double));
+        for (int j = 0; j < lda; j ++)
+        {   
+            for (int i = 0; i < lda; i ++)
+            {
+                Cpad[i+j*ldapad] = C[i+j*lda];
+            }
+        }
+    }
+    else
+    {
+        Cpad = C;
+    }
+
+
+    double* Apad = (double*) memalign(128, ldapad*ldapad*sizeof(double));
+    double * pAorigin, * pApad; 
+    int width, height, originheight;
+    for (int k = 0; k < lda; k += BLOCK_SIZE)
+    {
+        width = min(ldapad-k, BLOCK_SIZE);
+        for (int i = 0; i < ldapad; i += BLOCK_SIZE)
+        {
+            pAorigin = A+i+k*lda;
+            pApad = Apad + width*i + ldapad*k;
+            height = min(ldapad-i, BLOCK_SIZE);
+            originheight = min(lda-i, BLOCK_SIZE);
+            for (int _k = 0; _k < width; _k ++)
+            {
+                for (int _i = 0; _i < originheight; _i ++)
+                {
+                    pApad[_i+_k*height] = pAorigin[_i+_k*lda]; 
+                }
+                for (int _i = originheight; _i < height; _i ++)
+                {
+                    pApad[_i+_k*height] = 0.0;
+                }
+            }
+        }
+    }
+
+    for( int j = 0; j < ldapad; j += BLOCK_SIZE )
+    {
+        for( int k = 0; k < ldapad; k += BLOCK_SIZE )
+        {
+
+            int N = min( BLOCK_SIZE, ldapad-j );
+            int K = min( BLOCK_SIZE, lda-k );
+            int KK = min(BLOCK_SIZE, ldapad-k);
+            temp = B + k + j*lda;
+            for (int _j = 0; _j != N; ++_j)
+            {
+                for (int _k = 0; _k != K; ++_k)
+                {
+                    // temp(k,j) = cacheB(j, k): transpose
+                    cacheB[_j+_k*N] = temp[_k + _j*lda];
+                }
+            }
+
+            for( int i = 0; i < ldapad; i += BLOCK_SIZE )
+            {
+                int M = min( BLOCK_SIZE, ldapad-i );
+                // Now, after the padding, we know that M, N are multiples of the register block.
+                // so it will be safe to call do_block_cached directly
+                do_block_cached(ldapad, M, N, K, Apad + i*KK + k*ldapad, cacheB, Cpad + i + j*ldapad);
+            }
+        }
+    }
+    delete cacheB;
+
+    if (cCopied)
+    {
+        for (int j = 0; j < lda; j ++)
+            for (int i = 0; i < lda; i ++)
+                C[i+j*lda] = Cpad[i+j*ldapad];
+        free(Cpad);
+    }
+    free(Apad);
+
+}
