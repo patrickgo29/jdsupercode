@@ -29,75 +29,14 @@
 
 #define MIN(a, b) (a < b) ? a : b
 
-void 
-basic_dgemm_back (const int lda, const int M, const int N, const int K, const double *A, const double *B, double *C)
-{
-    int i,j,k;
-    int rs = REGISTER_SIZE;
-    
-    // init __m128d datatypes 
-    __m128d A1,A2,B1,B2,B3,B4,
-            C1,C2,C3,C4,C5,C6,C7,C8;
-
-    for(j=0; j<N; j+=rs) 
-    {
-        for(i=0; i<M; i+=rs)
-        {
-           C += i+j*lda; // update C to point to correct block
-           C1 = _mm_load_pd(C); C+=2;
-           C2 = _mm_load_pd(C); C+=lda-2;
-           C3 = _mm_load_pd(C); C+=2;
-           C4 = _mm_load_pd(C); C+=lda-2;
-           C5 = _mm_load_pd(C); C+=2;
-           C6 = _mm_load_pd(C); C+=lda-2;
-           C7 = _mm_load_pd(C); C+=2;
-           C8 = _mm_load_pd(C);
-           C += (-3*lda)-2; //reset C
-
-            for(k=0; k<K; k+=1)
-            {
-                //load {A1,A2,B1,B2,B3,B4}
-                A1 = _mm_load_pd(A+i+k*lda);
-                A2 = _mm_load_pd(A+i+k*lda+2);
-                B1 = _mm_load1_pd(B+j+k*lda);
-                B2 = _mm_load1_pd(B+j+k*lda+1);
-                B3 = _mm_load1_pd(B+j+k*lda+2);
-                B4 = _mm_load1_pd(B+j+k*lda+3);
-
-                //update Ci's
-                C1 = _mm_add_pd(_mm_mul_pd(A1,B1),C1);
-                C2 = _mm_add_pd(_mm_mul_pd(A2,B1),C2);
-                C3 = _mm_add_pd(_mm_mul_pd(A1,B2),C3);
-                C4 = _mm_add_pd(_mm_mul_pd(A2,B2),C4);
-                C5 = _mm_add_pd(_mm_mul_pd(A1,B3),C5);
-                C6 = _mm_add_pd(_mm_mul_pd(A2,B3),C6);
-                C7 = _mm_add_pd(_mm_mul_pd(A1,B4),C7);
-                C8 = _mm_add_pd(_mm_mul_pd(A2,B4),C8);
-            }
-            
-            // move results to main memory
-            _mm_store_sd(C,C1); C+=2;
-            _mm_store_sd(C,C2); C+=lda-2;
-            _mm_store_sd(C,C3); C+=2;
-            _mm_store_sd(C,C4); C+=lda-2;
-            _mm_store_sd(C,C5); C+=2;
-            _mm_store_sd(C,C6); C+=lda-2;
-            _mm_store_sd(C,C7); C+=2;
-            _mm_store_sd(C,C8);
-            C += (-3*lda)-2;
-
-            // restore C for next iteration
-            C -= i+j*lda;
-        }
-    }
-}
-
 
 /* basic_dgemm matrix multiply routine. should work for more general matrix sizes
  * requires for dimensions of A,B,C to be a multiple of 4
  *
- * differences from above - got rid of scalar multiplication
- * does not use blocking, but rather line size - only uses 5 registers now
+ * differences from above - got rid of scalar multiplication, all computations are
+ *    vectorized
+ * does not use blocking, but rather line size - only uses 5 registers now instead of 14
+ *    to achieve same effect
  * TODO: implement larger line size with more registers
  *
  */
@@ -122,8 +61,8 @@ void basic_dgemm (const int lda, const int M, const int N, const int K, const do
                 C1 = _mm_add_pd(_mm_mul_pd(A1,B1),C1);
                 C2 = _mm_add_pd(_mm_mul_pd(A2,B1),C2);
             }
-            _mm_store_pd(&C[i+j*lda],C1);
-            _mm_store_pd(&C[i+j*lda+2],C2);
+            _mm_store_pd(C+i+j*lda,C1);
+            _mm_store_pd(C+i+j*lda+2,C2);
         }
     }
 }
