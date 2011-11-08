@@ -9,16 +9,13 @@
 #include "stopwatch.h"
 #include "square_dgemm.h"
 
-#define FAST
-
 /*
  Matrix sizes used for benchmarking
 */
 
 #ifdef FAST
 const int test_sizes[] = {
-//  2040, 2048
-  256
+  2040, 2048
 };
 #else
 const int test_sizes[] = {
@@ -34,11 +31,11 @@ const int test_sizes[] = {
 
 #ifdef FAST
 const int validate_sizes[] = {
-  256, 262, 512, 1024, 2040, 2040 
+  256, 512, 1024, 2040, 2040 
 };
 #else
 const int validate_sizes[] = {
-  256, 262, 512, 1024, 3960, 3968, 4080, 4088, 4096, 4104, 
+  256, 512, 1024, 3960, 3968, 4080, 4088, 4096, 4104, 
   4160, 4176, 4608, 5120, 5128
 };
 #endif
