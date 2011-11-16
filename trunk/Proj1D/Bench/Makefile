@@ -14,10 +14,10 @@ LINK_MKL_ICC = -L/opt/intel/Compiler/11.1/059/mkl/lib/em64t/ \
 
 
 CC = icc
-CFLAGS = -O2 -lm -lrt -msse4 $(LINK_FORTRAN) $(LINK_MKL_ICC) $(LINK_OPENMP_ICC)
+CFLAGS = -O3 -lm -lrt -msse4 $(LINK_FORTRAN) $(LINK_MKL_ICC) $(LINK_OPENMP_ICC)
 
 FC = ifort
-FFLAGS = -O2 $(MKL_ICC) $(OPENMP_ICC)
+FFLAGS = -O3 $(MKL_ICC) $(OPENMP_ICC)
 
 %.o : %.c
 	$(CC) -c $< $(CFLAGS) 
