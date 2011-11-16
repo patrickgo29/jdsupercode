@@ -13,6 +13,7 @@ echo $PWD
 echo -e "\n\n"
 
 # Run benchmark
+# Setting affinity does not seem to help us
 ./benchmark--blocked_copy
 
 # eof

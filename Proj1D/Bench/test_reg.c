@@ -10,6 +10,7 @@
 #endif
 
 static struct stopwatch_t *timer;
+static struct stopwatch_t *timer2;
 
 // The 4x4 and 8x8 SSE kernel. Takes a pointer to the start of the 4x4 matrices in 
 // A and B that we want to multiply, and the start of the 4x4 matrix in C we want to store it in. 
@@ -407,10 +408,14 @@ void sse_kernel_eight_trans_dp(const int ldc, const int bs, const double *A, con
 
 //4x4 SSE matrix multiply kernel. assumes A and B are contiguously loaded,
 //while C is the global (non-contiguous) array
+//uses hadd to accumulate add-mul results when done
+//unrolls all loops fully
 void sse_kernel_four_trans(const int bs, const int ldc, const double *A, const double *B, double *C)
 {
     int i;
-    __m128d A1,A2,A3,A4,A5,A6,A7,A8,B1,B2,C1,C2;
+    //B1_copy and B2_copy are temp registers to expose parallelism
+    //when updating the C array
+    __m128d A1,A2,A3,A4,A5,A6,A7,A8,B1,B2,C1,C2,B1_copy,B2_copy;
     
     //fully load A
     A1 = _mm_load_pd(A);
@@ -426,56 +431,150 @@ void sse_kernel_four_trans(const int bs, const int ldc, const double *A, const d
     //first column of C
     B1 = _mm_load_pd(B);
     B2 = _mm_load_pd(B+2);
+    B1_copy = _mm_load_pd(B);
+    B2_copy = _mm_load_pd(B+2);
     C1 = _mm_load_pd(C);
     C2 = _mm_load_pd(C+2);
-    C1 = _mm_add_pd(C1,
-         _mm_hadd_pd(_mm_add_pd(_mm_mul_pd(A1,B1),_mm_mul_pd(A2,B2)),
-                     _mm_add_pd(_mm_mul_pd(A3,B1),_mm_mul_pd(A4,B2))));
-    C2 = _mm_add_pd(C2,
-         _mm_hadd_pd(_mm_add_pd(_mm_mul_pd(A5,B1),_mm_mul_pd(A6,B2)),
-                     _mm_add_pd(_mm_mul_pd(A7,B1),_mm_mul_pd(A8,B2))));
+    {
+        __m128d temp1 = _mm_mul_pd(A1,B1);
+        __m128d temp2 = _mm_mul_pd(A2,B2);
+        __m128d temp3 = _mm_mul_pd(A3,B1_copy);
+        __m128d temp4 = _mm_mul_pd(A4,B2_copy);
+        temp1 = _mm_add_pd(temp1,temp2);
+        temp3 = _mm_add_pd(temp3,temp4);
+        temp2 = _mm_hadd_pd(temp1,temp3);
+        C1 = _mm_add_pd(C1,temp2);
+    }
+    {
+        __m128d temp1 = _mm_mul_pd(A5,B1);
+        __m128d temp2 = _mm_mul_pd(A6,B2);
+        __m128d temp3 = _mm_mul_pd(A7,B1_copy);
+        __m128d temp4 = _mm_mul_pd(A8,B2_copy);
+        temp1 = _mm_add_pd(temp1,temp2);
+        temp3 = _mm_add_pd(temp3,temp4);
+        temp2 = _mm_hadd_pd(temp1,temp3);
+        C2 = _mm_add_pd(C2,temp2);
+    }
+//        C1 = _mm_add_pd(C1,
+//         _mm_hadd_pd(_mm_add_pd(_mm_mul_pd(A1,B1),_mm_mul_pd(A2,B2)),
+//                     _mm_add_pd(_mm_mul_pd(A3,B1),_mm_mul_pd(A4,B2))));
+//    C2 = _mm_add_pd(C2,
+//         _mm_hadd_pd(_mm_add_pd(_mm_mul_pd(A5,B1_copy),_mm_mul_pd(A6,B2_copy)),
+//                     _mm_add_pd(_mm_mul_pd(A7,B1_copy),_mm_mul_pd(A8,B2_copy))));
     _mm_store_pd(C,C1);
     _mm_store_pd(C+2,C2);
 
     //second column of C
     B1 = _mm_load_pd(B+bs);
     B2 = _mm_load_pd(B+bs+2);
+    B1_copy = _mm_load_pd(B+bs);
+    B2_copy = _mm_load_pd(B+bs+2);
     C1 = _mm_load_pd(C+ldc);
     C2 = _mm_load_pd(C+ldc+2);
+    {
+        __m128d temp1 = _mm_mul_pd(A1,B1);
+        __m128d temp2 = _mm_mul_pd(A2,B2);
+        __m128d temp3 = _mm_mul_pd(A3,B1_copy);
+        __m128d temp4 = _mm_mul_pd(A4,B2_copy);
+        temp1 = _mm_add_pd(temp1,temp2);
+        temp3 = _mm_add_pd(temp3,temp4);
+        temp2 = _mm_hadd_pd(temp1,temp3);
+        C1 = _mm_add_pd(C1,temp2);
+    }
+    {
+        __m128d temp1 = _mm_mul_pd(A5,B1);
+        __m128d temp2 = _mm_mul_pd(A6,B2);
+        __m128d temp3 = _mm_mul_pd(A7,B1_copy);
+        __m128d temp4 = _mm_mul_pd(A8,B2_copy);
+        temp1 = _mm_add_pd(temp1,temp2);
+        temp3 = _mm_add_pd(temp3,temp4);
+        temp2 = _mm_hadd_pd(temp1,temp3);
+        C2 = _mm_add_pd(C2,temp2);
+    }
+    /*
     C1 = _mm_add_pd(C1,
          _mm_hadd_pd(_mm_add_pd(_mm_mul_pd(A1,B1),_mm_mul_pd(A2,B2)),
                      _mm_add_pd(_mm_mul_pd(A3,B1),_mm_mul_pd(A4,B2))));
     C2 = _mm_add_pd(C2,
-         _mm_hadd_pd(_mm_add_pd(_mm_mul_pd(A5,B1),_mm_mul_pd(A6,B2)),
-                     _mm_add_pd(_mm_mul_pd(A7,B1),_mm_mul_pd(A8,B2))));
+         _mm_hadd_pd(_mm_add_pd(_mm_mul_pd(A5,B1_copy),_mm_mul_pd(A6,B2_copy)),
+                     _mm_add_pd(_mm_mul_pd(A7,B1_copy),_mm_mul_pd(A8,B2_copy))));
+    */
     _mm_store_pd(C+ldc,C1);
     _mm_store_pd(C+ldc+2,C2);
     
     //third column of C
     B1 = _mm_load_pd(B+2*bs);
     B2 = _mm_load_pd(B+2*bs+2);
+    B1_copy = _mm_load_pd(B+2*bs);
+    B2_copy = _mm_load_pd(B+2*bs+2);
     C1 = _mm_load_pd(C+2*ldc);
     C2 = _mm_load_pd(C+2*ldc+2);
+    {
+        __m128d temp1 = _mm_mul_pd(A1,B1);
+        __m128d temp2 = _mm_mul_pd(A2,B2);
+        __m128d temp3 = _mm_mul_pd(A3,B1_copy);
+        __m128d temp4 = _mm_mul_pd(A4,B2_copy);
+        temp1 = _mm_add_pd(temp1,temp2);
+        temp3 = _mm_add_pd(temp3,temp4);
+        temp2 = _mm_hadd_pd(temp1,temp3);
+        C1 = _mm_add_pd(C1,temp2);
+    }
+    {
+        __m128d temp1 = _mm_mul_pd(A5,B1);
+        __m128d temp2 = _mm_mul_pd(A6,B2);
+        __m128d temp3 = _mm_mul_pd(A7,B1_copy);
+        __m128d temp4 = _mm_mul_pd(A8,B2_copy);
+        temp1 = _mm_add_pd(temp1,temp2);
+        temp3 = _mm_add_pd(temp3,temp4);
+        temp2 = _mm_hadd_pd(temp1,temp3);
+        C2 = _mm_add_pd(C2,temp2);
+    }
+    /*
     C1 = _mm_add_pd(C1,
          _mm_hadd_pd(_mm_add_pd(_mm_mul_pd(A1,B1),_mm_mul_pd(A2,B2)),
                      _mm_add_pd(_mm_mul_pd(A3,B1),_mm_mul_pd(A4,B2))));
     C2 = _mm_add_pd(C2,
-         _mm_hadd_pd(_mm_add_pd(_mm_mul_pd(A5,B1),_mm_mul_pd(A6,B2)),
-                     _mm_add_pd(_mm_mul_pd(A7,B1),_mm_mul_pd(A8,B2))));
+         _mm_hadd_pd(_mm_add_pd(_mm_mul_pd(A5,B1_copy),_mm_mul_pd(A6,B2_copy)),
+                     _mm_add_pd(_mm_mul_pd(A7,B1_copy),_mm_mul_pd(A8,B2_copy))));
+    */
     _mm_store_pd(C+2*ldc,C1);
     _mm_store_pd(C+2*ldc+2,C2);
 
     //fourth column of C
     B1 = _mm_load_pd(B+3*bs);
     B2 = _mm_load_pd(B+3*bs+2);
+    B1_copy = _mm_load_pd(B+3*bs);
+    B2_copy = _mm_load_pd(B+3*bs+2);
     C1 = _mm_load_pd(C+3*ldc);
     C2 = _mm_load_pd(C+3*ldc+2);
+    {
+        __m128d temp1 = _mm_mul_pd(A1,B1);
+        __m128d temp2 = _mm_mul_pd(A2,B2);
+        __m128d temp3 = _mm_mul_pd(A3,B1_copy);
+        __m128d temp4 = _mm_mul_pd(A4,B2_copy);
+        temp1 = _mm_add_pd(temp1,temp2);
+        temp3 = _mm_add_pd(temp3,temp4);
+        temp2 = _mm_hadd_pd(temp1,temp3);
+        C1 = _mm_add_pd(C1,temp2);
+    }
+    {
+        __m128d temp1 = _mm_mul_pd(A5,B1);
+        __m128d temp2 = _mm_mul_pd(A6,B2);
+        __m128d temp3 = _mm_mul_pd(A7,B1_copy);
+        __m128d temp4 = _mm_mul_pd(A8,B2_copy);
+        temp1 = _mm_add_pd(temp1,temp2);
+        temp3 = _mm_add_pd(temp3,temp4);
+        temp2 = _mm_hadd_pd(temp1,temp3);
+        C2 = _mm_add_pd(C2,temp2);
+    }
+    /*
     C1 = _mm_add_pd(C1,
          _mm_hadd_pd(_mm_add_pd(_mm_mul_pd(A1,B1),_mm_mul_pd(A2,B2)),
                      _mm_add_pd(_mm_mul_pd(A3,B1),_mm_mul_pd(A4,B2))));
     C2 = _mm_add_pd(C2,
-         _mm_hadd_pd(_mm_add_pd(_mm_mul_pd(A5,B1),_mm_mul_pd(A6,B2)),
-                     _mm_add_pd(_mm_mul_pd(A7,B1),_mm_mul_pd(A8,B2))));
+         _mm_hadd_pd(_mm_add_pd(_mm_mul_pd(A5,B1_copy),_mm_mul_pd(A6,B2_copy)),
+                     _mm_add_pd(_mm_mul_pd(A7,B1_copy),_mm_mul_pd(A8,B2_copy))));
+    */
     _mm_store_pd(C+3*ldc,C1);
     _mm_store_pd(C+3*ldc+2,C2);
 
